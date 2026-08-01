@@ -1,0 +1,1794 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>云枢|考勤管理</title>
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/variables.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/base.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/layout.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/forms.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/navigation.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/display.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/feedback.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/tabs-browser.css">
+    <style>
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            margin-top: 50px;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .stat-card .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+            color: color-mix(in srgb, var(--text) 60%, transparent);
+        }
+
+        .stat-card .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .stat-card .stat-sub {
+            font-size: 0.85rem;
+            color: color-mix(in srgb, var(--text) 60%, transparent);
+        }
+
+        .stat-card.attendance .stat-value {
+            color: var(--attendance-color);
+        }
+
+        .stat-card.late .stat-value {
+            color: var(--late-color);
+        }
+
+        .stat-card.leave .stat-value {
+            color: var(--leave-color);
+        }
+
+        .stat-card.absent .stat-value {
+            color: var(--absent-color);
+        }
+
+        .stat-card.overtime .stat-value {
+            color: var(--overtime-color);
+        }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 16px;
+            padding: 16px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        .toolbar .search-box {
+            display: flex;
+            gap: 8px;
+            flex: 1;
+            min-width: 240px;
+        }
+
+        .toolbar .search-box input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .toolbar .filter-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 18px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: var(--btn-bg);
+            color: var(--text);
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: var(--main);
+            color: #fff;
+            border-color: var(--main);
+        }
+
+        .btn-primary {
+            background: var(--main);
+            color: #fff;
+            border-color: var(--main);
+        }
+
+        .btn-primary:hover {
+            background: color-mix(in srgb, var(--main) 85%, black);
+            border-color: color-mix(in srgb, var(--main) 85%, black);
+        }
+
+        .btn-success {
+            background: var(--attendance-color);
+            color: #fff;
+            border-color: var(--attendance-color);
+        }
+
+        .btn-success:hover {
+            background: #45a017;
+            border-color: #45a017;
+        }
+
+        .btn-danger {
+            background: var(--absent-color);
+            color: #fff;
+            border-color: var(--absent-color);
+        }
+
+        .btn-danger:hover {
+            background: #d91f29;
+            border-color: #d91f29;
+        }
+
+        .btn-warning {
+            background: var(--late-color);
+            color: #fff;
+            border-color: var(--late-color);
+        }
+
+        .btn-warning:hover {
+            background: #d48806;
+            border-color: #d48806;
+        }
+
+        .btn-secondary {
+            background: var(--btn-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--btn-hover);
+            color: var(--text);
+        }
+
+        .data-table-wrapper {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            overflow-x: auto;
+            margin-bottom: 24px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .data-table-wrapper table {
+            width: 100%;
+            min-width: 900px;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .data-table-wrapper thead {
+            background: var(--btn-bg);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .data-table-wrapper th,
+        .data-table-wrapper td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        .data-table-wrapper th {
+            font-weight: 600;
+            color: color-mix(in srgb, var(--text) 60%, transparent);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table-wrapper tbody tr:hover {
+            background: var(--btn-bg);
+        }
+
+        .data-table-wrapper .actions {
+            display: flex;
+            gap: 4px;
+            flex-wrap: nowrap;
+        }
+
+        .data-table-wrapper .actions button {
+            padding: 4px 10px;
+            font-size: 0.8rem;
+            border: 1px solid var(--border);
+            background: var(--card-bg);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            color: var(--text);
+        }
+
+        .data-table-wrapper .actions button:hover {
+            background: var(--main);
+            color: #fff;
+            border-color: var(--main);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-badge.attendance {
+            background: #f6ffed;
+            color: #389e0d;
+            border: 1px solid #b7eb8f;
+        }
+
+        .status-badge.late {
+            background: #fff7e6;
+            color: #d48806;
+            border: 1px solid #ffe58f;
+        }
+
+        .status-badge.leave {
+            background: #e6f7ff;
+            color: #0050b3;
+            border: 1px solid #91d5ff;
+        }
+
+        .status-badge.absent {
+            background: #fff1f0;
+            color: #cf1322;
+            border: 1px solid #ffa39e;
+        }
+
+        .status-badge.overtime {
+            background: #f9f0ff;
+            color: #531dab;
+            border: 1px solid #d3adf7;
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            background: var(--btn-bg);
+            color: var(--text);
+        }
+
+        .code-display {
+            padding: 8px 12px;
+            background: var(--btn-bg);
+            border: 1px dashed var(--border);
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: color-mix(in srgb, var(--text) 60%, transparent);
+            word-break: break-all;
+        }
+
+        .modal-content {
+            max-width: 520px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            box-sizing: border-box;
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--main);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--main) 20%, transparent);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .tabs-browser {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .tab-browser {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            background: var(--card-bg);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text);
+        }
+
+        .tab-browser.active {
+            background: var(--main);
+            color: #fff;
+            border-color: var(--main);
+        }
+
+        .tabs-content .tab-pane {
+            display: none;
+        }
+
+        .tabs-content .tab-pane.active {
+            display: block;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: color-mix(in srgb, var(--text) 60%, transparent);
+        }
+
+        .empty-state .icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            margin-top: 16px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--card-bg);
+        }
+
+        .calendar-day:hover {
+            background: var(--btn-bg);
+        }
+
+        .calendar-day.today {
+            background: var(--main);
+            color: #fff;
+            border-color: var(--main);
+        }
+
+        .calendar-day.other-month {
+            opacity: 0.4;
+        }
+
+        .calendar-day.has-record {
+            position: relative;
+        }
+
+        .calendar-day.has-record::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--attendance-color);
+        }
+
+        .calendar-day.late-day::after {
+            background: var(--late-color);
+        }
+
+        .calendar-day.absent-day::after {
+            background: var(--absent-color);
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .calendar-header h3 {
+            margin: 0;
+        }
+
+        .calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            font-size: 0.8rem;
+            text-align: center;
+            color: color-mix(in srgb, var(--text) 60%, transparent);
+            margin-bottom: 4px;
+        }
+
+        .attendance-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 16px;
+            padding: 16px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .summary-item {
+            flex: 1;
+            min-width: 140px;
+            text-align: center;
+        }
+
+        .summary-item .summary-label {
+            font-size: 0.85rem;
+            color: color-mix(in srgb, var(--text) 60%, transparent);
+            margin-bottom: 4px;
+        }
+
+        .summary-item .summary-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .summary-item.attendance .summary-value {
+            color: var(--attendance-color);
+        }
+
+        .summary-item.late .summary-value {
+            color: var(--late-color);
+        }
+
+        .summary-item.leave .summary-value {
+            color: var(--leave-color);
+        }
+
+        .summary-item.absent .summary-value {
+            color: var(--absent-color);
+        }
+
+        .summary-item.overtime .summary-value {
+            color: var(--overtime-color);
+        }
+
+        @media (max-width: 768px) {
+            .data-table-wrapper table,
+            .data-table-wrapper thead,
+            .data-table-wrapper tbody,
+            .data-table-wrapper th,
+            .data-table-wrapper td,
+            .data-table-wrapper tr {
+                display: block;
+            }
+
+            .data-table-wrapper thead {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+
+            .data-table-wrapper tbody tr {
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                margin-bottom: 12px;
+                padding: 12px;
+                background: var(--card-bg);
+            }
+
+            .data-table-wrapper td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 8px 0;
+                border-bottom: 1px solid var(--border);
+                max-width: none;
+                white-space: normal;
+                word-break: break-all;
+            }
+
+            .data-table-wrapper td:last-child {
+                border-bottom: none;
+            }
+
+            .data-table-wrapper td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: color-mix(in srgb, var(--text) 60%, transparent);
+                font-size: 0.85rem;
+                margin-right: 8px;
+                flex-shrink: 0;
+            }
+
+            .data-table-wrapper .actions {
+                width: 100%;
+                justify-content: flex-end;
+                gap: 8px;
+            }
+
+            .calendar-grid {
+                grid-template-columns: repeat(7, 1fr);
+            }
+
+            .calendar-day {
+                font-size: 0.75rem;
+                padding: 4px;
+            }
+
+            .attendance-cell {
+                min-width: 36px;
+                text-align: center;
+                font-size: 1rem;
+            }
+        }
+
+        .attendance-cell {
+            min-width: 40px;
+            text-align: center;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 4px;
+        }
+
+        .attendance-cell:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            z-index: 1;
+        }
+
+        .attendance-cell.has-record {
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="nav"></div>
+
+    <div class="container">
+        <h1 class="section-title">考勤管理</h1>
+        <hr>
+
+        <div class="dashboard-cards">
+            <div class="stat-card attendance">
+                <div class="stat-header">
+                    <span>本月出勤</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#52c41a">
+                        <path d="M9,16.17L4.83,12L3.41,13.41L9,19L21,7L19.59,5.59L9,16.17Z" />
+                    </svg>
+                </div>
+                <div class="stat-value" id="totalAttendance">0</div>
+                <div class="stat-sub">本月出勤天数</div>
+            </div>
+
+            <div class="stat-card late">
+                <div class="stat-header">
+                    <span>迟到次数</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#faad14">
+                        <path
+                            d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8M11,9H13V13H11V9Z" />
+                    </svg>
+                </div>
+                <div class="stat-value" id="totalLate">0</div>
+                <div class="stat-sub">本月迟到次数</div>
+            </div>
+
+            <div class="stat-card leave">
+                <div class="stat-header">
+                    <span>请假天数</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#007aff">
+                        <path
+                            d="M19,4H5C3.89,4 3,4.89 3,6V18A2,2 0 0,0 5,20H19A2,2 0 0,0 21,18V6C21,4.89 20.1,4 19,4M19,8H5V6H19M5,18V10H19V18Z" />
+                    </svg>
+                </div>
+                <div class="stat-value" id="totalLeave">0</div>
+                <div class="stat-sub">本月请假天数</div>
+            </div>
+
+            <div class="stat-card absent">
+                <div class="stat-header">
+                    <span>旷工天数</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#f5222d">
+                        <path
+                            d="M12,2C6.48,2 2,6.48 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8M11,9H13V13H11V9Z" />
+                    </svg>
+                </div>
+                <div class="stat-value" id="totalAbsent">0</div>
+                <div class="stat-sub">本月旷工天数</div>
+            </div>
+
+            <div class="stat-card overtime">
+                <div class="stat-header">
+                    <span>加班时长</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#722ed1">
+                        <path
+                            d="M11,16H3V8H11M11,20H3V18H11M13,8V18A2,2 0 0,0 15,20H21V4H15A2,2 0 0,0 13,6V8M15,8H21V18H15V8Z" />
+                    </svg>
+                </div>
+                <div class="stat-value" id="totalOvertime">0h</div>
+                <div class="stat-sub">本月加班时长</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span>员工总数</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#4a90d9">
+                        <path
+                            d="M12,12C14.21,12 16,10.21 16,8C16,5.79 14.21,4 12,4C9.79,4 8,5.79 8,8C8,10.21 9.79,12 12,12M12,14C9.33,14 4,15.34 4,18V20H20V18C20,15.34 14.67,14 12,14Z" />
+                    </svg>
+                </div>
+                <div class="stat-value" id="totalEmployees">0</div>
+                <div class="stat-sub">在册员工数量</div>
+            </div>
+        </div>
+
+        <hr>
+        <h1 class="section-title">操作</h1>
+        <div style="margin-bottom: 16px;">
+            <button class="btn btn-success" onclick="openAddEmployeeModal()">+ 新增员工</button>
+            <button class="btn btn-primary" onclick="openCheckInModal()">打卡</button>
+            <button class="btn btn-secondary" onclick="deleteSelected()">删除选中</button>
+            <button class="btn btn-secondary" onclick="exportData('json')">导出 JSON</button>
+            <button class="btn btn-secondary" onclick="exportData('csv')">导出 CSV</button>
+        </div>
+        <hr>
+
+        <div class="tabs-browser">
+            <button class="tab-browser active" onclick="switchTab('tab1', this)">考勤记录</button>
+            <button class="tab-browser" onclick="switchTab('tab2', this)">员工管理</button>
+            <button class="tab-browser" onclick="switchTab('tab3', this)">考勤日历</button>
+            <button class="tab-browser" onclick="switchTab('tab4', this)">数据管理</button>
+        </div>
+        <div class="tabs-content">
+            <div class="tab-pane active" id="tab1">
+                <div class="toolbar">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="搜索员工姓名、部门..." oninput="renderAttendanceTable()">
+                        <button class="btn btn-primary" onclick="renderAttendanceTable()">搜索</button>
+                    </div>
+                    <div class="filter-group">
+                        <span style="font-size: 0.85rem; color: color-mix(in srgb, var(--text) 60%, transparent);">月份:</span>
+                        <input type="month" id="attendanceMonth" value="" onchange="renderAttendanceTable()">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 16px; padding: 12px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; font-size: 0.85rem;">
+                    <strong>图例：</strong>
+                    <span style="margin-right: 16px;">✅ 正常出勤</span>
+                    <span style="margin-right: 16px;">⏰ 迟到</span>
+                    <span style="margin-right: 16px;">⏳ 早退</span>
+                    <span style="margin-right: 16px;">❌ 旷工</span>
+                    <span style="margin-right: 16px;">△ 事假</span>
+                    <span style="margin-right: 16px;">○ 病假</span>
+                    <span style="margin-right: 16px;">➕ 加班</span>
+                    <span style="margin-right: 16px;">▼ 出差</span>
+                    <span style="margin-right: 16px;">◆ 休息</span>
+                    <span style="margin-right: 16px;">◎ 婚假</span>
+                    <span style="margin-right: 16px;">● 产假</span>
+                    <span style="margin-right: 16px;">● 丧假</span>
+                    <span style="margin-right: 16px;">□ 学习</span>
+                </div>
+
+                <div class="data-table-wrapper">
+                    <table id="attendanceMatrixTable">
+                        <thead id="attendanceMatrixHead">
+                            <tr>
+                                <th><input type="checkbox" id="selectAll" onclick="toggleSelectAll()"></th>
+                                <th>姓名</th>
+                                <th>部门</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-pane" id="tab2">
+                <div class="toolbar">
+                    <div class="search-box">
+                        <input type="text" id="employeeSearchInput" placeholder="搜索员工姓名、工号..." oninput="renderEmployeeTable()">
+                        <button class="btn btn-primary" onclick="renderEmployeeTable()">搜索</button>
+                    </div>
+                    <div class="filter-group">
+                        <span style="font-size: 0.85rem; color: color-mix(in srgb, var(--text) 60%, transparent);">部门:</span>
+                        <select id="departmentFilter" onchange="renderEmployeeTable()">
+                            <option value="all">全部部门</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                    <button class="btn btn-danger" onclick="deleteSelectedEmployees()">删除选中</button>
+                </div>
+
+                <div class="data-table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="selectAllEmployees" onclick="toggleSelectAllEmployees()"></th>
+                                <th>工号</th>
+                                <th>姓名</th>
+                                <th>部门</th>
+                                <th>职位</th>
+                                <th>电话</th>
+                                <th>入职日期</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employeeTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-pane" id="tab3">
+                <div class="toolbar">
+                    <div class="filter-group">
+                        <span style="font-size: 0.85rem; color: color-mix(in srgb, var(--text) 60%, transparent);">选择员工:</span>
+                        <select id="calendarEmployeeSelect" onchange="renderCalendar()">
+                            <option value="">全部员工</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <span style="font-size: 0.85rem; color: color-mix(in srgb, var(--text) 60%, transparent);">月份:</span>
+                        <input type="month" id="calendarMonth" onchange="onCalendarMonthChange()">
+                    </div>
+                </div>
+
+                <div style="padding: 20px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow);">
+                    <div class="calendar-header">
+                        <button class="btn" onclick="prevMonth()">‹</button>
+                        <h3 id="calendarTitle">2024年1月</h3>
+                        <button class="btn" onclick="nextMonth()">›</button>
+                    </div>
+                    <div class="calendar-weekdays">
+                        <div>日</div>
+                        <div>一</div>
+                        <div>二</div>
+                        <div>三</div>
+                        <div>四</div>
+                        <div>五</div>
+                        <div>六</div>
+                    </div>
+                    <div class="calendar-grid" id="calendarGrid">
+                    </div>
+                </div>
+
+                <div class="attendance-summary">
+                    <div class="summary-item attendance">
+                        <div class="summary-label">出勤</div>
+                        <div class="summary-value" id="summaryAttendance">0</div>
+                    </div>
+                    <div class="summary-item late">
+                        <div class="summary-label">迟到</div>
+                        <div class="summary-value" id="summaryLate">0</div>
+                    </div>
+                    <div class="summary-item leave">
+                        <div class="summary-label">请假</div>
+                        <div class="summary-value" id="summaryLeave">0</div>
+                    </div>
+                    <div class="summary-item absent">
+                        <div class="summary-label">旷工</div>
+                        <div class="summary-value" id="summaryAbsent">0</div>
+                    </div>
+                    <div class="summary-item overtime">
+                        <div class="summary-label">加班</div>
+                        <div class="summary-value" id="summaryOvertime">0h</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane" id="tab4">
+                <div style="padding: 20px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow);">
+                    <div style="margin-bottom: 24px;">
+                        <h3 style="margin-bottom: 12px;">导出数据</h3>
+                        <button class="btn btn-secondary" onclick="exportData('json')">导出 JSON</button>
+                        <button class="btn btn-secondary" onclick="exportData('csv')">导出 CSV</button>
+                    </div>
+                    <div style="margin-bottom: 24px;">
+                        <h3 style="margin-bottom: 12px;">导入数据</h3>
+                        <input type="file" id="importFile" accept=".json" style="margin-bottom: 8px;">
+                        <br>
+                        <button class="btn btn-primary" onclick="importData()">导入</button>
+                    </div>
+                    <div>
+                        <h3 style="margin-bottom: 12px; color: var(--absent-color);">危险操作</h3>
+                        <button class="btn btn-danger" onclick="resetData()">重置所有数据</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">新增员工</h3>
+            <hr>
+            <input type="hidden" id="editId">
+
+            <div class="form-group">
+                <label>工号</label>
+                <div id="codeDisplay" class="code-display"></div>
+            </div>
+
+            <div class="form-group">
+                <label>姓名 <span style="color: var(--absent-color);">*</span></label>
+                <input type="text" id="inputName" placeholder="请输入姓名">
+            </div>
+
+            <div class="row" style="gap: 16px; display: flex;">
+                <div class="form-group" style="flex: 1;">
+                    <label>部门</label>
+                    <input type="text" id="inputDepartment" placeholder="请输入部门">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>职位</label>
+                    <input type="text" id="inputPosition" placeholder="请输入职位">
+                </div>
+            </div>
+
+            <div class="row" style="gap: 16px; display: flex;">
+                <div class="form-group" style="flex: 1;">
+                    <label>电话</label>
+                    <input type="tel" id="inputPhone" placeholder="请输入电话">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>入职日期</label>
+                    <input type="date" id="inputHireDate">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>状态</label>
+                <select id="inputStatus">
+                    <option value="active">在职</option>
+                    <option value="leave">休假</option>
+                    <option value="resigned">离职</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>备注</label>
+                <textarea id="inputRemark" rows="3" placeholder="请输入备注信息"></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal('modal')">关闭</button>
+                <button class="btn btn-primary" onclick="saveEmployee()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="checkInModal">
+        <div class="modal-content">
+            <h3>打卡</h3>
+            <hr>
+
+            <div class="form-group">
+                <label>员工 <span style="color: var(--absent-color);">*</span></label>
+                <select id="checkInEmployeeSelect">
+                    <option value="">请选择员工</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>日期</label>
+                <input type="date" id="checkInDate">
+            </div>
+
+            <div class="row" style="gap: 16px; display: flex;">
+                <div class="form-group" style="flex: 1;">
+                    <label>上班时间</label>
+                    <input type="time" id="checkInTime">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>下班时间</label>
+                    <input type="time" id="checkOutTime">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>考勤类型</label>
+                <select id="checkInType">
+                    <option value="attendance">正常出勤 ✅</option>
+                    <option value="late">迟到 ⏰</option>
+                    <option value="earlyLeave">早退 ⏳</option>
+                    <option value="absent">旷工 ❌</option>
+                    <option value="leave">事假 △</option>
+                    <option value="sickLeave">病假 ○</option>
+                    <option value="overtime">加班 ➕</option>
+                    <option value="businessTrip">出差 ▼</option>
+                    <option value="rest">休息 ◆</option>
+                    <option value="marriageLeave">婚假 ◎</option>
+                    <option value="maternityLeave">产假 ●</option>
+                    <option value="funeralLeave">丧假 ●</option>
+                    <option value="annualLeave">年假 年</option>
+                    <option value="study">学习 □</option>
+                    <option value="makeUp">补卡 ✔️</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>备注</label>
+                <textarea id="checkInRemark" rows="3" placeholder="请输入备注信息"></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal('checkInModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveCheckIn()">确认打卡</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="resetModal">
+        <div class="modal-content">
+            <h3>确认重置所有数据吗？</h3>
+            <hr>
+            <div style="margin-bottom: 12px; color: var(--absent-color); font-size: 0.9rem;">⚠️ 警告：重置后所有数据将被永久删除，此操作不可恢复！</div>
+            <div style="margin-bottom: 16px; font-size: 0.9rem;">请输入下方的随机确认密码以继续：</div>
+            <div style="padding: 12px; background: var(--btn-bg); border-radius: 6px; text-align: center; margin-bottom: 16px;">
+                <span style="font-family: 'Courier New', Courier, monospace; font-size: 1.4rem; font-weight: bold; color: var(--main); letter-spacing: 4px;" id="resetCodeDisplay"></span>
+            </div>
+            <div class="form-group">
+                <label style="color: var(--absent-color);">确认密码</label>
+                <input type="text" id="resetPassword" placeholder="请输入上方的确认密码">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal('resetModal')">取消</button>
+                <button class="btn btn-danger" onclick="confirmReset()">确认重置</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../UI/primoUI 0.2/js/modules/feedback.js"></script>
+    <script src="../../UI/primoUI 0.2/js/modules/modal.js"></script>
+    <script src="../../UI/primoUI 0.2/js/modules/tabs.js"></script>
+    <script src="../../UI/primoUI 0.2/js/modules/theme.js"></script>
+    <script src="../../js/nav.js"></script>
+    <script>
+        let employees = JSON.parse(localStorage.getItem('attendance_employees') || '[]');
+        let records = JSON.parse(localStorage.getItem('attendance_records') || '[]');
+        let currentStatusFilter = 'all';
+        let resetVerificationCode = '';
+        let currentCalendarDate = new Date();
+
+        function getRandomStr(len = 10) {
+            const pool = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            let res = '';
+            for (let i = 0; i < len; i++) {
+                let r = Math.floor(Math.random() * pool.length);
+                res += pool[r];
+            }
+            return res;
+        }
+
+        function getFullCode() {
+            const stamp = Date.now();
+            const rand10 = getRandomStr(10);
+            return 'EMP' + stamp + rand10.substring(0, 6);
+        }
+
+        function generateCode() {
+            const codeDisplay = document.getElementById('codeDisplay');
+            if (codeDisplay) {
+                codeDisplay.textContent = getFullCode();
+            }
+        }
+
+        function todayStr() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        function nowTime() {
+            const now = new Date();
+            return now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+        }
+
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-browser').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            if (btn) btn.classList.add('active');
+            if (tabId === 'tab2') renderEmployeeTable();
+            if (tabId === 'tab3') renderCalendar();
+        }
+
+        function setStatusFilter(status, btn) {
+            currentStatusFilter = status;
+            document.querySelectorAll('.toolbar .filter-group button').forEach(b => {
+                if (b.textContent && b !== document.querySelector('.toolbar .filter-group span')) {
+                    b.classList.remove('active');
+                }
+            });
+            if (btn) btn.classList.add('active');
+            renderAttendanceTable();
+        }
+
+        function openAddEmployeeModal() {
+            document.getElementById('modalTitle').textContent = '新增员工';
+            document.getElementById('editId').value = '';
+            document.getElementById('inputName').value = '';
+            document.getElementById('inputDepartment').value = '';
+            document.getElementById('inputPosition').value = '';
+            document.getElementById('inputPhone').value = '';
+            document.getElementById('inputHireDate').value = todayStr();
+            document.getElementById('inputStatus').value = 'active';
+            document.getElementById('inputRemark').value = '';
+            generateCode();
+            openModal('modal');
+        }
+
+        function openEditEmployeeModal(id) {
+            const emp = employees.find(e => e.id === id);
+            if (!emp) return;
+            document.getElementById('modalTitle').textContent = '编辑员工';
+            document.getElementById('editId').value = emp.id;
+            document.getElementById('inputName').value = emp.name || '';
+            document.getElementById('inputDepartment').value = emp.department || '';
+            document.getElementById('inputPosition').value = emp.position || '';
+            document.getElementById('inputPhone').value = emp.phone || '';
+            document.getElementById('inputHireDate').value = emp.hireDate || '';
+            document.getElementById('inputStatus').value = emp.status || 'active';
+            document.getElementById('inputRemark').value = emp.remark || '';
+            document.getElementById('codeDisplay').textContent = emp.code || getFullCode();
+            openModal('modal');
+        }
+
+        function saveEmployee() {
+            const id = document.getElementById('editId').value;
+            const name = document.getElementById('inputName').value.trim();
+
+            if (!name) {
+                alert('请输入姓名');
+                return;
+            }
+
+            const employee = {
+                id: id || Date.now().toString(),
+                code: document.getElementById('codeDisplay').textContent,
+                name: name,
+                department: document.getElementById('inputDepartment').value.trim(),
+                position: document.getElementById('inputPosition').value.trim(),
+                phone: document.getElementById('inputPhone').value.trim(),
+                hireDate: document.getElementById('inputHireDate').value,
+                status: document.getElementById('inputStatus').value,
+                remark: document.getElementById('inputRemark').value.trim(),
+                createdAt: id ? (employees.find(e => e.id === id) || {}).createdAt : new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+
+            if (id) {
+                const idx = employees.findIndex(e => e.id === id);
+                if (idx !== -1) employees[idx] = employee;
+            } else {
+                employees.unshift(employee);
+            }
+
+            saveEmployeeData();
+            closeModal('modal');
+            renderEmployeeTable();
+            updateDashboard();
+            updateEmployeeSelects();
+        }
+
+        function saveEmployeeData() {
+            localStorage.setItem('attendance_employees', JSON.stringify(employees));
+        }
+
+        function deleteEmployee(id) {
+            if (!confirm('确定删除该员工？')) return;
+            employees = employees.filter(e => e.id !== id);
+            saveEmployeeData();
+            renderEmployeeTable();
+            updateDashboard();
+            updateEmployeeSelects();
+        }
+
+        function toggleSelectAll() {
+            const checked = document.getElementById('selectAll').checked;
+            document.querySelectorAll('.row-check').forEach(cb => cb.checked = checked);
+        }
+
+        function toggleSelectAllEmployees() {
+            const checked = document.getElementById('selectAllEmployees').checked;
+            document.querySelectorAll('.employee-row-check').forEach(cb => cb.checked = checked);
+        }
+
+        function deleteSelected() {
+            const ids = Array.from(document.querySelectorAll('.row-check:checked')).map(cb => cb.dataset.id);
+            if (!ids.length) {
+                alert('请先选择要删除的员工');
+                return;
+            }
+            if (!confirm(`确定删除选中的 ${ids.length} 名员工及其所有考勤记录？`)) return;
+            employees = employees.filter(e => !ids.includes(e.id));
+            records = records.filter(r => !ids.includes(r.employeeId));
+            saveEmployeeData();
+            saveRecordData();
+            renderAttendanceTable();
+            updateDashboard();
+            updateEmployeeSelects();
+        }
+
+        function deleteSelectedEmployees() {
+            const ids = Array.from(document.querySelectorAll('.employee-row-check:checked')).map(cb => cb.dataset.id);
+            if (!ids.length) {
+                alert('请先选择要删除的员工');
+                return;
+            }
+            if (!confirm(`确定删除选中的 ${ids.length} 名员工？`)) return;
+            employees = employees.filter(e => !ids.includes(e.id));
+            saveEmployeeData();
+            renderEmployeeTable();
+            updateDashboard();
+            updateEmployeeSelects();
+        }
+
+        function openCheckInModal() {
+            document.getElementById('checkInDate').value = todayStr();
+            document.getElementById('checkInTime').value = nowTime();
+            document.getElementById('checkOutTime').value = '';
+            document.getElementById('checkInType').value = 'attendance';
+            document.getElementById('checkInRemark').value = '';
+            updateEmployeeSelects();
+            openModal('checkInModal');
+        }
+
+        function saveCheckIn() {
+            const employeeId = document.getElementById('checkInEmployeeSelect').value;
+            const date = document.getElementById('checkInDate').value;
+            const checkInTime = document.getElementById('checkInTime').value;
+
+            if (!employeeId) {
+                alert('请选择员工');
+                return;
+            }
+            if (!date) {
+                alert('请选择日期');
+                return;
+            }
+
+            const employee = employees.find(e => e.id === employeeId);
+
+            const record = {
+                id: Date.now().toString(),
+                employeeId: employeeId,
+                employeeName: employee ? employee.name : '',
+                department: employee ? employee.department : '',
+                date: date,
+                checkInTime: checkInTime,
+                checkOutTime: document.getElementById('checkOutTime').value,
+                type: document.getElementById('checkInType').value,
+                remark: document.getElementById('checkInRemark').value.trim(),
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+
+            records.unshift(record);
+            saveRecordData();
+            closeModal('checkInModal');
+            renderAttendanceTable();
+            updateDashboard();
+        }
+
+        function saveRecordData() {
+            localStorage.setItem('attendance_records', JSON.stringify(records));
+        }
+
+        function deleteRecord(id) {
+            if (!confirm('确定删除该考勤记录？')) return;
+            records = records.filter(r => r.id !== id);
+            saveRecordData();
+            renderAttendanceTable();
+            updateDashboard();
+        }
+
+        function generateResetCode() {
+            const pool = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789一二三四五六七八九十你我他';
+            let code = '';
+            for (let i = 0; i < 8; i++) {
+                code += pool[Math.floor(Math.random() * pool.length)];
+            }
+            resetVerificationCode = code;
+            document.getElementById('resetCodeDisplay').textContent = resetVerificationCode;
+        }
+
+        function resetData() {
+            generateResetCode();
+            document.getElementById('resetPassword').value = '';
+            openModal('resetModal');
+        }
+
+        function confirmReset() {
+            const input = document.getElementById('resetPassword').value.trim();
+            if (!input) {
+                alert('请输入确认密码');
+                return;
+            }
+            if (input !== resetVerificationCode) {
+                alert('密码输入错误，请重新输入');
+                document.getElementById('resetPassword').value = '';
+                generateResetCode();
+                return;
+            }
+            employees = [];
+            records = [];
+            saveEmployeeData();
+            saveRecordData();
+            renderAttendanceTable();
+            renderEmployeeTable();
+            updateDashboard();
+            updateEmployeeSelects();
+            closeModal('resetModal');
+            alert('数据已重置');
+        }
+
+        function exportData(format) {
+            const fmt = format || 'json';
+            const filename = 'attendance_data_' + todayStr();
+            let dataStr, mimeType, ext;
+
+            if (fmt === 'csv') {
+                const headers = ['日期', '员工姓名', '部门', '类型', '上班时间', '下班时间', '状态', '备注'];
+                const typeMap = { attendance: '出勤', late: '迟到', leave: '请假', absent: '旷工', overtime: '加班' };
+                const escape = (v) => {
+                    const s = String(v == null ? '' : v);
+                    return '"' + s.replace(/"/g, '""') + '"';
+                };
+                const rows = records.map(r => [
+                    r.date || '',
+                    r.employeeName || '',
+                    r.department || '',
+                    typeMap[r.type] || r.type || '',
+                    r.checkInTime || '',
+                    r.checkOutTime || '',
+                    typeMap[r.type] || r.type || '',
+                    r.remark || ''
+                ].map(escape).join(','));
+                dataStr = '\ufeff' + [headers.map(escape).join(',')].concat(rows).join('\n');
+                mimeType = 'text/csv;charset=utf-8';
+                ext = 'csv';
+            } else {
+                dataStr = JSON.stringify({ employees, records }, null, 2);
+                mimeType = 'application/json;charset=utf-8';
+                ext = 'json';
+            }
+
+            const dataUri = 'data:' + mimeType + ',' + encodeURIComponent(dataStr);
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', filename + '.' + ext);
+            linkElement.click();
+        }
+
+        function importData() {
+            const fileInput = document.getElementById('importFile');
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('请选择要导入的文件');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (imported.employees && Array.isArray(imported.employees)) {
+                        employees = imported.employees;
+                        saveEmployeeData();
+                    }
+                    if (imported.records && Array.isArray(imported.records)) {
+                        records = imported.records;
+                        saveRecordData();
+                    }
+                    renderAttendanceTable();
+                    renderEmployeeTable();
+                    updateDashboard();
+                    updateEmployeeSelects();
+                    alert('导入成功');
+                } catch (err) {
+                    alert('文件解析失败: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function getFilteredRecords() {
+            const search = document.getElementById('searchInput').value.trim().toLowerCase();
+            const dateFrom = document.getElementById('filterDateFrom').value;
+            const dateTo = document.getElementById('filterDateTo').value;
+
+            return records.filter(r => {
+                if (currentStatusFilter !== 'all' && r.type !== currentStatusFilter) return false;
+                if (search) {
+                    const searchText = (r.employeeName + ' ' + (r.department || '') + ' ' + (r.remark || '')).toLowerCase();
+                    if (!searchText.includes(search)) return false;
+                }
+                if (dateFrom && r.date < dateFrom) return false;
+                if (dateTo && r.date > dateTo) return false;
+                return true;
+            });
+        }
+
+        const ATTENDANCE_SYMBOLS = {
+            attendance: { symbol: '✅', text: '正常出勤', colorVar: '--attendance-color', bgVar: '--attendance-bg' },
+            late: { symbol: '⏰', text: '迟到', colorVar: '--late-color', bgVar: '--late-bg' },
+            earlyLeave: { symbol: '⏳', text: '早退', colorVar: '--late-color', bgVar: '--late-bg' },
+            absent: { symbol: '❌', text: '旷工', colorVar: '--absent-color', bgVar: '--absent-bg' },
+            leave: { symbol: '△', text: '事假', colorVar: '--leave-color', bgVar: '--leave-bg' },
+            sickLeave: { symbol: '○', text: '病假', colorVar: '--overtime-color', bgVar: '--overtime-bg' },
+            overtime: { symbol: '➕', text: '加班', colorVar: '--overtime-color', bgVar: '--overtime-bg' },
+            businessTrip: { symbol: '▼', text: '出差', colorVar: '--leave-color', bgVar: '--leave-bg' },
+            rest: { symbol: '◆', text: '休息', colorVar: '--rest-color', bgVar: '--rest-bg' },
+            marriageLeave: { symbol: '◎', text: '婚假', colorVar: '--overtime-color', bgVar: '--overtime-bg' },
+            maternityLeave: { symbol: '●', text: '产假', colorVar: '--overtime-color', bgVar: '--overtime-bg' },
+            funeralLeave: { symbol: '●', text: '丧假', colorVar: '--rest-color', bgVar: '--rest-bg' },
+            annualLeave: { symbol: '年', text: '年假', colorVar: '--leave-color', bgVar: '--leave-bg' },
+            study: { symbol: '□', text: '学习', colorVar: '--attendance-color', bgVar: '--attendance-bg' },
+            makeUp: { symbol: '✔️', text: '补卡', colorVar: '--attendance-color', bgVar: '--attendance-bg' }
+        };
+
+        function getAttendanceSymbol(type) {
+            return ATTENDANCE_SYMBOLS[type] || { symbol: '—', text: '未打卡', colorVar: '--default-color', bgVar: '--default-bg' };
+        }
+
+        function getStatusBadge(type) {
+            const info = getAttendanceSymbol(type);
+            return `<span class="status-badge" style="background: var(${info.bgVar}); color: var(${info.colorVar}); border-color: var(${info.colorVar});">${info.text}</span>`;
+        }
+
+        function renderAttendanceTable() {
+            const monthInput = document.getElementById('attendanceMonth');
+            const monthValue = monthInput.value;
+            const today = new Date();
+            const year = monthValue ? parseInt(monthValue.split('-')[0]) : today.getFullYear();
+            const month = monthValue ? parseInt(monthValue.split('-')[1]) - 1 : today.getMonth();
+
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+
+            const dates = [];
+            for (let i = 1; i <= daysInMonth; i++) {
+                dates.push(year + '-' + String(month + 1).padStart(2, '0') + '-' + String(i).padStart(2, '0'));
+            }
+
+            const search = document.getElementById('searchInput').value.trim().toLowerCase();
+            const activeEmployees = employees.filter(e => e.status === 'active').filter(e => {
+                if (!search) return true;
+                const searchText = (e.name + ' ' + (e.department || '')).toLowerCase();
+                return searchText.includes(search);
+            });
+
+            const head = document.getElementById('attendanceMatrixHead');
+            let headerHtml = `<tr><th><input type="checkbox" id="selectAll" onclick="toggleSelectAll()"></th><th>姓名</th><th>部门</th>`;
+            dates.forEach(date => {
+                const d = new Date(date);
+                const dayOfWeek = d.getDay();
+                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                const dateLabel = date.substring(5);
+                headerHtml += `<th style="${isWeekend ? 'background: #f5f5f5; color: #8c8c8c;' : ''}">${dateLabel}</th>`;
+            });
+            headerHtml += '<th>操作</th></tr>';
+            head.innerHTML = headerHtml;
+
+            const tbody = document.getElementById('attendanceTableBody');
+            
+            if (activeEmployees.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="${dates.length + 4}">
+                            <div class="empty-state">
+                                <div class="icon">👥</div>
+                                <div>暂无员工</div>
+                                <div style="margin-top: 8px; font-size: 0.85rem;">点击"新增员工"添加</div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = activeEmployees.map(emp => {
+                let rowHtml = `<tr><td data-label="选择"><input type="checkbox" class="row-check" data-id="${emp.id}"></td>`;
+                rowHtml += `<td data-label="姓名"><strong>${emp.name}</strong></td>`;
+                rowHtml += `<td data-label="部门">${emp.department || '-'}</td>`;
+
+                dates.forEach(date => {
+                    const record = records.find(r => r.employeeId === emp.id && r.date === date);
+                    let cellContent = '—';
+                    let cellStyle = '';
+                    let cellClass = '';
+
+                    if (record) {
+                        const symbolInfo = getAttendanceSymbol(record.type);
+                        cellContent = symbolInfo.symbol;
+                        cellStyle = `background: var(${symbolInfo.bgVar}); color: var(${symbolInfo.colorVar});`;
+                        cellClass = 'has-record';
+                    }
+
+                    rowHtml += `<td data-label="${date}" class="attendance-cell ${cellClass}" style="${cellStyle}" title="${record ? record.date + ': ' + getAttendanceSymbol(record.type).text + (record.checkInTime ? ' ' + record.checkInTime : '') + (record.checkOutTime ? '-' + record.checkOutTime : '') : '未打卡'}" onclick="showRecordDetail('${record ? record.id : ''}', '${emp.id}', '${date}')">${cellContent}</td>`;
+                });
+
+                rowHtml += `<td data-label="操作" class="actions"><button onclick="openCheckInModalWithEmployee('${emp.id}')">打卡</button></td></tr>`;
+                return rowHtml;
+            }).join('');
+        }
+
+        function openCheckInModalWithEmployee(employeeId) {
+            openCheckInModal();
+            document.getElementById('checkInEmployeeSelect').value = employeeId;
+        }
+
+        function showRecordDetail(recordId, employeeId, date) {
+            if (!recordId) {
+                openCheckInModalWithEmployee(employeeId);
+                document.getElementById('checkInDate').value = date;
+                return;
+            }
+            const record = records.find(r => r.id === recordId);
+            if (!record) return;
+            const symbolInfo = getAttendanceSymbol(record.type);
+            const message = `日期: ${record.date}\n姓名: ${record.employeeName}\n部门: ${record.department || '-'}\n状态: ${symbolInfo.text}\n上班: ${record.checkInTime || '-'}\n下班: ${record.checkOutTime || '-'}\n备注: ${record.remark || '-'}`;
+            if (confirm(message + '\n\n是否删除此记录？')) {
+                deleteRecord(recordId);
+            }
+        }
+
+        function renderEmployeeTable() {
+            const tbody = document.getElementById('employeeTableBody');
+            const search = document.getElementById('employeeSearchInput').value.trim().toLowerCase();
+            const departmentFilter = document.getElementById('departmentFilter').value;
+
+            const filtered = employees.filter(e => {
+                if (departmentFilter !== 'all' && e.department !== departmentFilter) return false;
+                if (search) {
+                    const searchText = (e.name + ' ' + (e.code || '') + ' ' + (e.department || '') + ' ' + (e.position || '')).toLowerCase();
+                    if (!searchText.includes(search)) return false;
+                }
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9">
+                            <div class="empty-state">
+                                <div class="icon">👥</div>
+                                <div>暂无员工记录</div>
+                                <div style="margin-top: 8px; font-size: 0.85rem;">点击"新增员工"添加</div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(e => {
+                const statusMap = {
+                    active: { text: '在职', cls: 'attendance' },
+                    leave: { text: '休假', cls: 'leave' },
+                    resigned: { text: '离职', cls: 'absent' }
+                };
+                const status = statusMap[e.status] || { text: e.status, cls: 'attendance' };
+                return `
+                    <tr>
+                        <td data-label="选择"><input type="checkbox" class="employee-row-check" data-id="${e.id}"></td>
+                        <td data-label="工号" style="font-size: 0.8rem; color: #888; font-family: monospace;">${(e.code || '').substring(0, 16)}</td>
+                        <td data-label="姓名"><strong>${e.name || '-'}</strong></td>
+                        <td data-label="部门">${e.department || '-'}</td>
+                        <td data-label="职位">${e.position || '-'}</td>
+                        <td data-label="电话">${e.phone || '-'}</td>
+                        <td data-label="入职日期">${e.hireDate || '-'}</td>
+                        <td data-label="状态"><span class="status-badge ${status.cls}">${status.text}</span></td>
+                        <td data-label="操作" class="actions">
+                            <button onclick="openEditEmployeeModal('${e.id}')">编辑</button>
+                            <button onclick="deleteEmployee('${e.id}')">删除</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateEmployeeSelects() {
+            const checkInSelect = document.getElementById('checkInEmployeeSelect');
+            const calendarSelect = document.getElementById('calendarEmployeeSelect');
+            const departmentFilter = document.getElementById('departmentFilter');
+
+            const activeEmployees = employees.filter(e => e.status === 'active');
+
+            checkInSelect.innerHTML = '<option value="">请选择员工</option>' +
+                activeEmployees.map(e => `<option value="${e.id}">${e.name} - ${e.department || ''}</option>`).join('');
+
+            calendarSelect.innerHTML = '<option value="">全部员工</option>' +
+                employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+
+            const departments = [...new Set(employees.map(e => e.department).filter(d => d))];
+            departmentFilter.innerHTML = '<option value="all">全部部门</option>' +
+                departments.map(d => `<option value="${d}">${d}</option>`).join('');
+        }
+
+        function updateDashboard() {
+            const today = new Date();
+            const currentMonth = today.getMonth();
+            const currentYear = today.getFullYear();
+
+            const monthRecords = records.filter(r => {
+                const recordDate = new Date(r.date);
+                return recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear;
+            });
+
+            const attendanceCount = monthRecords.filter(r => r.type === 'attendance').length;
+            const lateCount = monthRecords.filter(r => ['late', 'earlyLeave'].includes(r.type)).length;
+            const leaveTypes = ['leave', 'sickLeave', 'marriageLeave', 'maternityLeave', 'funeralLeave', 'annualLeave'];
+            const leaveCount = monthRecords.filter(r => leaveTypes.includes(r.type)).length;
+            const absentCount = monthRecords.filter(r => r.type === 'absent').length;
+
+            let overtimeHours = 0;
+            monthRecords.filter(r => r.type === 'overtime').forEach(r => {
+                if (r.checkInTime && r.checkOutTime) {
+                    const [inH, inM] = r.checkInTime.split(':').map(Number);
+                    const [outH, outM] = r.checkOutTime.split(':').map(Number);
+                    const hours = (outH - inH) + (outM - inM) / 60;
+                    if (hours > 0) overtimeHours += hours;
+                }
+            });
+
+            document.getElementById('totalAttendance').textContent = attendanceCount;
+            document.getElementById('totalLate').textContent = lateCount;
+            document.getElementById('totalLeave').textContent = leaveCount;
+            document.getElementById('totalAbsent').textContent = absentCount;
+            document.getElementById('totalOvertime').textContent = overtimeHours.toFixed(1) + 'h';
+            document.getElementById('totalEmployees').textContent = employees.filter(e => e.status === 'active').length;
+        }
+
+        function onCalendarMonthChange() {
+            const value = document.getElementById('calendarMonth').value;
+            if (value) {
+                const [year, month] = value.split('-').map(Number);
+                currentCalendarDate = new Date(year, month, 1);
+                renderCalendar();
+            }
+        }
+
+        function renderCalendar() {
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+            const employeeId = document.getElementById('calendarEmployeeSelect').value;
+
+            document.getElementById('calendarTitle').textContent = year + '年' + (month + 1) + '月';
+
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startDay = firstDay.getDay();
+
+            let html = '';
+            for (let i = 0; i < startDay; i++) {
+                const prevMonthDay = new Date(year, month, -i);
+                html += `<div class="calendar-day other-month">${prevMonthDay.getDate()}</div>`;
+            }
+
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+                let classes = 'calendar-day';
+
+                if (dateStr === todayStr) {
+                    classes += ' today';
+                }
+
+                const dayRecords = records.filter(r => {
+                    if (r.date !== dateStr) return false;
+                    if (employeeId && r.employeeId !== employeeId) return false;
+                    return true;
+                });
+
+                if (dayRecords.length > 0) {
+                    classes += ' has-record';
+                    const hasLate = dayRecords.some(r => ['late', 'earlyLeave'].includes(r.type));
+                    const hasAbsent = dayRecords.some(r => r.type === 'absent');
+                    if (hasAbsent) classes += ' absent-day';
+                    else if (hasLate) classes += ' late-day';
+                }
+
+                html += `<div class="${classes}" onclick="showDayRecords('${dateStr}')">${day}</div>`;
+            }
+
+            const remainingCells = 42 - (startDay + daysInMonth);
+            for (let i = 1; i <= remainingCells; i++) {
+                html += `<div class="calendar-day other-month">${i}</div>`;
+            }
+
+            document.getElementById('calendarGrid').innerHTML = html;
+            updateCalendarSummary();
+        }
+
+        function updateCalendarSummary() {
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+            const employeeId = document.getElementById('calendarEmployeeSelect').value;
+
+            const monthRecords = records.filter(r => {
+                const recordDate = new Date(r.date);
+                if (recordDate.getMonth() !== month || recordDate.getFullYear() !== year) return false;
+                if (employeeId && r.employeeId !== employeeId) return false;
+                return true;
+            });
+
+            const attendanceCount = monthRecords.filter(r => r.type === 'attendance').length;
+            const lateCount = monthRecords.filter(r => ['late', 'earlyLeave'].includes(r.type)).length;
+            const leaveTypes = ['leave', 'sickLeave', 'marriageLeave', 'maternityLeave', 'funeralLeave', 'annualLeave'];
+            const leaveCount = monthRecords.filter(r => leaveTypes.includes(r.type)).length;
+            const absentCount = monthRecords.filter(r => r.type === 'absent').length;
+
+            let overtimeHours = 0;
+            monthRecords.filter(r => r.type === 'overtime').forEach(r => {
+                if (r.checkInTime && r.checkOutTime) {
+                    const [inH, inM] = r.checkInTime.split(':').map(Number);
+                    const [outH, outM] = r.checkOutTime.split(':').map(Number);
+                    const hours = (outH - inH) + (outM - inM) / 60;
+                    if (hours > 0) overtimeHours += hours;
+                }
+            });
+
+            document.getElementById('summaryAttendance').textContent = attendanceCount;
+            document.getElementById('summaryLate').textContent = lateCount;
+            document.getElementById('summaryLeave').textContent = leaveCount;
+            document.getElementById('summaryAbsent').textContent = absentCount;
+            document.getElementById('summaryOvertime').textContent = overtimeHours.toFixed(1) + 'h';
+        }
+
+        function prevMonth() {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+            document.getElementById('calendarMonth').value = currentCalendarDate.toISOString().substring(0, 7);
+            renderCalendar();
+        }
+
+        function nextMonth() {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+            document.getElementById('calendarMonth').value = currentCalendarDate.toISOString().substring(0, 7);
+            renderCalendar();
+        }
+
+        function showDayRecords(dateStr) {
+            const employeeId = document.getElementById('calendarEmployeeSelect').value;
+            const dayRecords = records.filter(r => {
+                if (r.date !== dateStr) return false;
+                if (employeeId && r.employeeId !== employeeId) return false;
+                return true;
+            });
+
+            if (dayRecords.length === 0) {
+                alert(dateStr + ' 没有考勤记录');
+                return;
+            }
+
+            let message = dateStr + ' 的考勤记录：\n\n';
+            dayRecords.forEach((r, i) => {
+                message += `${i + 1}. ${r.employeeName} - ${getStatusBadge(r.type).replace(/<[^>]+>/g, '')}\n`;
+                if (r.checkInTime) message += `   上班: ${r.checkInTime}\n`;
+                if (r.checkOutTime) message += `   下班: ${r.checkOutTime}\n`;
+                if (r.remark) message += `   备注: ${r.remark}\n`;
+                message += '\n';
+            });
+            alert(message);
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const today = new Date();
+            const monthStr = today.toISOString().substring(0, 7);
+            document.getElementById('attendanceMonth').value = monthStr;
+            document.getElementById('calendarMonth').value = currentCalendarDate.toISOString().substring(0, 7);
+
+            renderAttendanceTable();
+            updateDashboard();
+            updateEmployeeSelects();
+        });
+    </script>
+    <script src="../js/api.js"></script>
+    <script src="../js/cloud-sync.js"></script>
+</body>
+</html>

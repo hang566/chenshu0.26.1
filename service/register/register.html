@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册</title>
+    <link rel="stylesheet" href="../../UI/primoUI 0.1/css/modules/base.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.1/css/modules/display.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.1/css/modules/feedback.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.1/css/modules/forms.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.1/css/modules/layout.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.1/css/modules/navigation.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.1/css/modules/tabs-browser.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.1/css/modules/variables.css">
+</head>
+
+<body>
+    <div class="card" style="max-width: 400px; margin: 0 auto;">
+        <h1 style="text-align: center; margin-top: 0;">注册</h1>
+        
+        <!-- 显示继承提示信息 -->
+        <div id="inheritNotice" style="display: none; background: #e3f2fd; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 14px; color: #1565c0; border: 1px solid #90caf9;"></div>
+
+        <!-- 模式切换提示 -->
+        <div id="modeIndicator" style="background: #fff3e0; padding: 8px 12px; border-radius: 4px; margin-bottom: 16px; font-size: 13px; color: #e65100; display: none;"></div>
+
+        <form action="/register" method="post" id="registerForm">
+            <div class="form-item">
+                <label class="form-label" for="username">用户名</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="form-item">
+                <label class="form-label" for="emailOrPhone">邮箱或电话</label>
+                <input type="text" id="emailOrPhone" name="emailOrPhone" required>
+            </div>
+            <div class="form-item">
+                <label class="form-label" for="password">密码</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <div class="form-item">
+                <label class="form-label" for="confirmPassword">确认密码</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required>
+            </div>
+            <div class="form-item" style="margin-top: 20px;">
+                <input type="submit" value="注册" class="btn" style="width: 100%;">
+            </div>
+        </form>
+        <p style="font-size: 12px; color: #666; text-align: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+            <span id="modeTip">当前为联机模式，账户信息将同步至服务器</span>
+        </p>
+    </div>
+    <script src="../../UI/primoUI 0.1/js/modules/feedback.js"></script>
+    <script src="../../UI/primoUI 0.1/js/modules/modal.js"></script>
+    <script src="../../UI/primoUI 0.1/js/modules/tabs.js"></script>
+    <script src="../../UI/primoUI 0.1/js/modules/theme.js"></script>
+    <script src="../js/api.js"></script>
+    <script>
+        // 全局状态
+        let isOnlineMode = false;
+
+        // 页面加载时检查服务状态和脱机账号
+        window.onload = async function() {
+            // 检查服务器是否可用
+            isOnlineMode = await ApiService.isServerAvailable();
+            updateModeIndicator();
+
+            // 检查是否有本地账号
+            const userData = localStorage.getItem('user');
+            if (userData) {
+                const user = JSON.parse(userData);
+                if (user.type === 'offline') {
+                    // 显示继承提示
+                    const notice = document.getElementById('inheritNotice');
+                    notice.style.display = 'block';
+                    notice.innerHTML = `
+                        <strong>📱 检测到脱机账号</strong><br>
+                        用户名：<strong>${user.username}</strong><br>
+                        注册后将升级为联机账号，并继承当前账号的所有数据。
+                    `;
+                    
+                    // 预填表单
+                    document.getElementById('username').value = user.username;
+                    document.getElementById('emailOrPhone').value = user.emailOrPhone || '';
+                } else if (user.type === 'online') {
+                    // 已经是联机账号，跳转到用户中心
+                    alert('您已登录！');
+                    window.location.href = '../user/user.html';
+                }
+            }
+        };
+
+        // 更新模式指示器
+        function updateModeIndicator() {
+            const indicator = document.getElementById('modeIndicator');
+            const tip = document.getElementById('modeTip');
+            
+            if (isOnlineMode) {
+                indicator.style.display = 'block';
+                indicator.style.background = '#e8f5e9';
+                indicator.style.color = '#2e7d32';
+                indicator.style.border = '1px solid #a5d6a7';
+                indicator.innerHTML = '🟢 联机模式：服务器已连接，账户信息将同步保存';
+                tip.textContent = '当前为联机模式，账户信息将同步至服务器';
+            } else {
+                indicator.style.display = 'block';
+                indicator.style.background = '#fff3e0';
+                indicator.style.color = '#e65100';
+                indicator.style.border = '1px solid #ffcc80';
+                indicator.innerHTML = '🟡 脱机模式：服务器未连接，账户信息仅保存在本地浏览器';
+                tip.textContent = '当前为脱机模式，账户信息仅保存在本地浏览器';
+            }
+        }
+
+        // 生成随机字符串（脱机模式使用）
+        function getRandomStr(len = 10) {
+            const pool = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            let res = '';
+            for (let i = 0; i < len; i++) {
+                let r = Math.floor(Math.random() * pool.length);
+                res += pool[r];
+            }
+            return res;
+        }
+
+        document.querySelector('form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const emailOrPhone = document.getElementById('emailOrPhone').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            // 验证密码
+            if (password !== confirmPassword) {
+                alert('两次输入的密码不一致！');
+                return;
+            }
+
+            if (password.length < 6) {
+                alert('密码长度至少为6位！');
+                return;
+            }
+
+            // 检查是否有脱机账号需要继承
+            const existingUserData = localStorage.getItem('user');
+            let offlineData = null;
+
+            if (existingUserData) {
+                const existingUser = JSON.parse(existingUserData);
+                if (existingUser.type === 'offline') {
+                    offlineData = existingUser;
+                }
+            }
+
+            // 联机模式：调用后端 API
+            if (isOnlineMode) {
+                try {
+                    const result = await ApiService.register(username, emailOrPhone, password);
+                    
+                    // 保存 Token
+                    if (result.data && result.data.token) {
+                        ApiService.setToken(result.data.token);
+                    }
+                    
+                    // 构建用户数据对象
+                    const userData = {
+                        ...result.data.user,
+                        type: 'online'
+                    };
+
+                    // 如果有脱机数据需要继承
+                    if (offlineData) {
+                        // 合并脱机数据（保留服务器返回的 ID 和创建时间）
+                        userData._offlineData = offlineData.data || {};
+                    }
+
+                    localStorage.setItem('user', JSON.stringify(userData));
+                    alert('注册成功！欢迎加入。');
+                    window.location.href = '../user/user.html';
+                } catch (error) {
+                    alert('注册失败：' + error.message);
+                }
+            } else {
+                // 脱机模式：本地处理
+                let userData = {};
+
+                if (offlineData) {
+                    // 继承脱机账号的数据
+                    userData = {
+                        ...offlineData,
+                        username: username,
+                        emailOrPhone: emailOrPhone,
+                        type: 'online',
+                        createdAt: offlineData.createdAt,
+                        code: offlineData.code || (Date.now() + getRandomStr(10))
+                    };
+                } else {
+                    // 创建全新本地账号
+                    userData = {
+                        id: Date.now(),
+                        username: username,
+                        emailOrPhone: emailOrPhone,
+                        code: Date.now() + getRandomStr(10),
+                        createdAt: new Date().toLocaleString(),
+                        type: 'online',
+                        avatar: '',
+                        status: 1
+                    };
+                }
+
+                localStorage.setItem('user', JSON.stringify(userData));
+                
+                // 同步更新账号库
+                let accounts = JSON.parse(localStorage.getItem('accounts') || '[]');
+                const accountIndex = accounts.findIndex(a => a.username === userData.username || a.code === userData.code);
+                
+                if (accountIndex >= 0) {
+                    accounts[accountIndex] = userData;
+                } else {
+                    accounts.push(userData);
+                }
+                localStorage.setItem('accounts', JSON.stringify(accounts));
+
+                alert('注册成功！（脱机模式，数据保存在本地）');
+                window.location.href = '../user/user.html';
+            }
+        });
+    </script>
+</body>
+
+</html>

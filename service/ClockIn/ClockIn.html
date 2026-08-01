@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>云枢|员工打卡</title>
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/variables.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/base.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/layout.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/forms.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/navigation.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/display.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/feedback.css">
+    <style>
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); font-size: 15px; -webkit-tap-highlight-color: transparent; }
+        .app { max-width: 480px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
+
+        /* 顶部栏 */
+        .topbar {
+            position: sticky; top: 0; z-index: 50;
+            background: var(--main); color: #fff;
+            padding: 12px 14px; display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .topbar .title { font-size: 1rem; font-weight: 600; }
+        .topbar .sub { font-size: 0.72rem; opacity: 0.85; margin-top: 2px; }
+        .icon-btn { background: rgba(255,255,255,0.18); border: none; color: #fff; width: 38px; height: 38px; border-radius: 50%; font-size: 1.1rem; cursor: pointer; }
+
+        /* 员工选择 */
+        .emp-bar { padding: 12px; background: var(--card-bg); border-bottom: 1px solid var(--border); position: sticky; top: 62px; z-index: 40; }
+        .emp-pick {
+            display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+            border: 1px solid var(--border); border-radius: 10px; background: var(--bg); cursor: pointer;
+        }
+        .emp-pick .avatar {
+            width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+            background: color-mix(in srgb, var(--main) 16%, transparent); color: var(--main);
+            display: flex; align-items: center; justify-content: center; font-weight: 700;
+        }
+        .emp-pick .info { flex: 1; min-width: 0; }
+        .emp-pick .name { font-weight: 600; font-size: 0.92rem; }
+        .emp-pick .meta { font-size: 0.74rem; color: color-mix(in srgb, var(--text) 55%, transparent); }
+        .emp-pick .caret { color: color-mix(in srgb, var(--text) 40%, transparent); }
+
+        /* 大时钟 */
+        .clock-card {
+            margin: 16px 12px; padding: 26px 16px; text-align: center;
+            background: linear-gradient(135deg, var(--main), color-mix(in srgb, var(--main) 70%, #000));
+            color: #fff; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+        }
+        .clock-card .date { font-size: 0.85rem; opacity: 0.9; margin-bottom: 6px; }
+        .clock-card .time { font-size: 3rem; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: 1px; line-height: 1.1; }
+        .clock-card .week { font-size: 0.78rem; opacity: 0.85; margin-top: 4px; }
+
+        /* 打卡按钮 */
+        .punch-row { display: flex; gap: 10px; padding: 0 12px; margin-bottom: 16px; }
+        .punch-btn {
+            flex: 1; padding: 18px 10px; border: none; border-radius: 14px;
+            font-size: 1rem; font-weight: 600; cursor: pointer; transition: transform 0.15s;
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+        }
+        .punch-btn:active { transform: scale(0.97); }
+        .punch-btn.in { background: var(--success); color: #fff; }
+        .punch-btn.out { background: var(--warning); color: #fff; }
+        .punch-btn:disabled { background: var(--text-placeholder); cursor: not-allowed; opacity: 0.7; }
+        .punch-btn .p-icon { font-size: 1.4rem; }
+        .punch-btn .p-time { font-size: 0.74rem; font-weight: 400; opacity: 0.9; }
+
+        /* 今日状态 */
+        .today-card { margin: 0 12px 16px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
+        .today-head { padding: 12px 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .today-head .t-title { font-weight: 600; font-size: 0.92rem; }
+        .tag { font-size: 0.7rem; padding: 2px 9px; border-radius: 10px; font-weight: 500; }
+        .tag.attendance { background: color-mix(in srgb, var(--success) 16%, transparent); color: var(--success); }
+        .tag.late { background: color-mix(in srgb, var(--warning) 16%, transparent); color: var(--warning); }
+        .tag.earlyLeave { background: color-mix(in srgb, #f39c12 16%, transparent); color: #f39c12; }
+        .tag.absent { background: color-mix(in srgb, var(--danger) 16%, transparent); color: var(--danger); }
+        .tag.leave, .tag.sickLeave, .tag.businessTrip, .tag.rest, .tag.marriageLeave { background: color-mix(in srgb, var(--main) 14%, transparent); color: var(--main); }
+        .today-body { padding: 14px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; text-align: center; }
+        .today-cell .tc-label { font-size: 0.72rem; color: color-mix(in srgb, var(--text) 55%, transparent); margin-bottom: 4px; }
+        .today-cell .tc-value { font-size: 1.05rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .today-cell .tc-value.muted { color: color-mix(in srgb, var(--text) 40%, transparent); font-weight: 400; }
+
+        /* 最近记录 */
+        .section { padding: 0 12px 24px; }
+        .section-h { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .section-h h3 { margin: 0; font-size: 0.95rem; }
+        .section-h .link { font-size: 0.8rem; color: var(--main); cursor: pointer; }
+        .rec-list { display: flex; flex-direction: column; gap: 8px; }
+        .rec-item { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 10px; }
+        .rec-item .r-date { flex-shrink: 0; width: 46px; text-align: center; }
+        .rec-item .r-day { font-size: 1.1rem; font-weight: 700; line-height: 1; }
+        .rec-item .r-month { font-size: 0.66rem; color: color-mix(in srgb, var(--text) 55%, transparent); }
+        .rec-item .r-info { flex: 1; min-width: 0; }
+        .rec-item .r-times { font-size: 0.82rem; font-variant-numeric: tabular-nums; }
+        .rec-item .r-times .arrow { color: color-mix(in srgb, var(--text) 40%, transparent); margin: 0 4px; }
+        .rec-item .r-hours { font-size: 0.72rem; color: color-mix(in srgb, var(--text) 55%, transparent); margin-top: 2px; }
+        .empty { text-align: center; padding: 30px 20px; color: color-mix(in srgb, var(--text) 50%, transparent); font-size: 0.88rem; }
+
+        /* 模态框 */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: flex-end; justify-content: center; }
+        .modal.show { display: flex; }
+        .modal-content { width: 100%; max-width: 480px; max-height: 88vh; background: var(--card-bg); border-radius: 16px 16px 0 0; display: flex; flex-direction: column; overflow: hidden; animation: slideUp 0.25s ease; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .modal-head { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-head h3 { margin: 0; font-size: 1.05rem; }
+        .modal-close { background: none; border: none; font-size: 1.5rem; line-height: 1; cursor: pointer; color: color-mix(in srgb, var(--text) 50%, transparent); }
+        .modal-body { padding: 14px 16px; overflow-y: auto; flex: 1; }
+        .search-input { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 0.92rem; background: var(--bg); color: var(--text); margin-bottom: 10px; }
+        .emp-option { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; cursor: pointer; transition: background 0.15s; }
+        .emp-option:hover, .emp-option.active { background: var(--btn-hover); }
+        .emp-option .avatar { width: 36px; height: 36px; border-radius: 50%; background: color-mix(in srgb, var(--main) 16%, transparent); color: var(--main); display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+        .emp-option .info { flex: 1; min-width: 0; }
+        .emp-option .name { font-weight: 600; font-size: 0.9rem; }
+        .emp-option .meta { font-size: 0.74rem; color: color-mix(in srgb, var(--text) 55%, transparent); }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 0.82rem; color: color-mix(in srgb, var(--text) 65%, transparent); margin-bottom: 5px; }
+        .form-group input, .form-group select { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; background: var(--bg); color: var(--text); font-family: inherit; }
+        .btn { padding: 10px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--btn-bg); color: var(--text); font-size: 0.9rem; cursor: pointer; }
+        .btn-primary { background: var(--main); color: #fff; border-color: var(--main); }
+        .modal-foot { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+        .modal-foot .btn { flex: 1; }
+        .hint { font-size: 0.76rem; color: color-mix(in srgb, var(--text) 55%, transparent); margin-top: 6px; text-align: center; }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <div class="topbar">
+            <div>
+                <div class="title">员工打卡</div>
+                <div class="sub" id="topSub">请先选择身份</div>
+            </div>
+            <button class="icon-btn" onclick="openSettings()" title="设置">⚙️</button>
+        </div>
+
+        <!-- 员工选择 -->
+        <div class="emp-bar">
+            <div class="emp-pick" onclick="openEmpPicker()">
+                <div class="avatar" id="pickAvatar">?</div>
+                <div class="info">
+                    <div class="name" id="pickName">点击选择员工</div>
+                    <div class="meta" id="pickMeta">未选择</div>
+                </div>
+                <div class="caret">▾</div>
+            </div>
+        </div>
+
+        <!-- 大时钟 -->
+        <div class="clock-card">
+            <div class="date" id="clockDate">—</div>
+            <div class="time" id="clockTime">--:--:--</div>
+            <div class="week" id="clockWeek">—</div>
+        </div>
+
+        <!-- 打卡按钮 -->
+        <div class="punch-row">
+            <button class="punch-btn in" id="punchInBtn" disabled onclick="punchIn()">
+                <span class="p-icon">📍</span>
+                <span>上班打卡</span>
+                <span class="p-time" id="punchInTime">未打卡</span>
+            </button>
+            <button class="punch-btn out" id="punchOutBtn" disabled onclick="punchOut()">
+                <span class="p-icon">🏁</span>
+                <span>下班打卡</span>
+                <span class="p-time" id="punchOutTime">未打卡</span>
+            </button>
+        </div>
+
+        <!-- 今日状态 -->
+        <div class="today-card" id="todayCard" style="display:none;">
+            <div class="today-head">
+                <span class="t-title">今日考勤</span>
+                <span class="tag" id="todayTag">—</span>
+            </div>
+            <div class="today-body">
+                <div class="today-cell">
+                    <div class="tc-label">上班</div>
+                    <div class="tc-value muted" id="todayIn">--:--</div>
+                </div>
+                <div class="today-cell">
+                    <div class="tc-label">下班</div>
+                    <div class="tc-value muted" id="todayOut">--:--</div>
+                </div>
+                <div class="today-cell">
+                    <div class="tc-label">工时</div>
+                    <div class="tc-value muted" id="todayHours">--</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 最近记录 -->
+        <div class="section">
+            <div class="section-h">
+                <h3>最近打卡</h3>
+                <span class="link" onclick="openHistory()">查看全部</span>
+            </div>
+            <div class="rec-list" id="recList">
+                <div class="empty">选择员工后显示打卡记录</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 员工选择模态框 -->
+    <div class="modal" id="empPickerModal">
+        <div class="modal-content">
+            <div class="modal-head"><h3>选择员工</h3><button class="modal-close" onclick="closeModal('empPickerModal')">&times;</button></div>
+            <div class="modal-body">
+                <input type="text" class="search-input" id="empSearch" placeholder="搜索姓名/工号/部门..." oninput="renderEmpOptions()">
+                <div id="empOptions"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 备注模态框 -->
+    <div class="modal" id="remarkModal">
+        <div class="modal-content">
+            <div class="modal-head"><h3 id="remarkTitle">打卡备注</h3><button class="modal-close" onclick="closeModal('remarkModal')">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>备注（可选）</label>
+                    <input type="text" id="remarkInput" placeholder="如：外勤、设备故障...">
+                </div>
+                <div class="hint" id="remarkHint"></div>
+            </div>
+            <div class="modal-foot">
+                <button class="btn" onclick="closeModal('remarkModal')">取消</button>
+                <button class="btn btn-primary" id="remarkConfirm">确认打卡</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 历史记录模态框 -->
+    <div class="modal" id="historyModal">
+        <div class="modal-content">
+            <div class="modal-head"><h3>打卡历史</h3><button class="modal-close" onclick="closeModal('historyModal')">&times;</button></div>
+            <div class="modal-body" id="historyBody"></div>
+        </div>
+    </div>
+
+    <!-- 设置模态框 -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-head"><h3>打卡设置</h3><button class="modal-close" onclick="closeModal('settingsModal')">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>上班时间</label>
+                    <input type="time" id="setWorkStart" value="09:00">
+                </div>
+                <div class="form-group">
+                    <label>下班时间</label>
+                    <input type="time" id="setWorkEnd" value="18:00">
+                </div>
+                <div class="hint">超过上班时间打卡记为"迟到"，早于下班时间打卡记为"早退"。</div>
+            </div>
+            <div class="modal-foot">
+                <button class="btn" onclick="closeModal('settingsModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveSettings()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 存储配置（与考勤表共享） ====================
+        const STORAGE_EMP = 'attendance_employees';
+        const STORAGE_REC = 'attendance_records';
+        const STORAGE_SET = 'clockin_settings';
+        const ORG_EMP = 'org_employees';
+        const ORG_DEPT = 'org_departments';
+
+        const TYPE_TEXT = {
+            attendance: '正常出勤', late: '迟到', earlyLeave: '早退', absent: '旷工',
+            leave: '事假', sickLeave: '病假', overtime: '加班', businessTrip: '出差',
+            rest: '休息', marriageLeave: '婚假'
+        };
+
+        let employees = [];
+        let records = [];
+        let settings = { workStart: '09:00', workEnd: '18:00' };
+        let currentEmpId = null;
+        let pendingAction = null;  // 'in' | 'out'
+
+        function loadData() {
+            employees = JSON.parse(localStorage.getItem(STORAGE_EMP) || '[]');
+            records = JSON.parse(localStorage.getItem(STORAGE_REC) || '[]');
+            settings = Object.assign({ workStart: '09:00', workEnd: '18:00' }, JSON.parse(localStorage.getItem(STORAGE_SET) || '{}'));
+            bridgeFromOrg();
+        }
+        // 若考勤员工表为空，从组织管理同步一次（避免重复录入）
+        function bridgeFromOrg() {
+            if (employees.length === 0) {
+                const orgEmps = JSON.parse(localStorage.getItem(ORG_EMP) || '[]');
+                const orgDepts = JSON.parse(localStorage.getItem(ORG_DEPT) || '[]');
+                if (orgEmps.length > 0) {
+                    employees = orgEmps.map(e => ({
+                        id: e.id,
+                        code: e.employeeNo || '',
+                        name: e.name || '',
+                        department: deptNameFromOrg(e.departmentId, orgDepts),
+                        position: e.title || '',
+                        phone: e.phone || '',
+                        status: e.status === 'resigned' ? '离职' : '在职',
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    }));
+                    localStorage.setItem(STORAGE_EMP, JSON.stringify(employees));
+                }
+            }
+        }
+        function deptNameFromOrg(id, depts) {
+            const d = depts.find(x => x.id === id);
+            return d ? d.name : '';
+        }
+        function saveRecords() { localStorage.setItem(STORAGE_REC, JSON.stringify(records)); }
+        function saveSettingsData() { localStorage.setItem(STORAGE_SET, JSON.stringify(settings)); }
+
+        function uid() { return Date.now().toString() + Math.random().toString(36).slice(2, 6); }
+        function escapeHtml(str) {
+            return String(str ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+        }
+        function pad(n) { return String(n).padStart(2, '0'); }
+        function todayStr() { return new Date().toISOString().split('T')[0]; }
+        function nowTime() { const d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+        function nowTimeSec() { const d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()); }
+        function fmtDate(d) { return d ? String(d).slice(0, 10) : '-'; }
+
+        // ==================== 时钟 ====================
+        const WEEK = ['日', '一', '二', '三', '四', '五', '六'];
+        function tickClock() {
+            const d = new Date();
+            document.getElementById('clockDate').textContent = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+            document.getElementById('clockTime').textContent = nowTimeSec();
+            document.getElementById('clockWeek').textContent = `星期${WEEK[d.getDay()]}`;
+        }
+
+        // ==================== 员工选择 ====================
+        function openEmpPicker() {
+            document.getElementById('empSearch').value = '';
+            renderEmpOptions();
+            openModal('empPickerModal');
+        }
+        function renderEmpOptions() {
+            const search = document.getElementById('empSearch').value.trim().toLowerCase();
+            const list = employees.filter(e =>
+                !search ||
+                String(e.name || '').toLowerCase().includes(search) ||
+                String(e.code || '').toLowerCase().includes(search) ||
+                String(e.department || '').toLowerCase().includes(search));
+            const box = document.getElementById('empOptions');
+            if (list.length === 0) {
+                box.innerHTML = `<div class="empty">暂无员工，请先在考勤表/组织管理中添加</div>`;
+                return;
+            }
+            box.innerHTML = list.map(e => {
+                const initial = (e.name || '?').slice(-1) || '?';
+                return `
+                <div class="emp-option ${e.id === currentEmpId ? 'active' : ''}" onclick="selectEmp('${e.id}')">
+                    <div class="avatar">${escapeHtml(initial)}</div>
+                    <div class="info">
+                        <div class="name">${escapeHtml(e.name)} ${e.code ? '<span style="font-size:0.74rem;color:color-mix(in srgb,var(--text) 55%,transparent);">' + escapeHtml(e.code) + '</span>' : ''}</div>
+                        <div class="meta">${escapeHtml(e.department || '-')}${e.position ? ' · ' + escapeHtml(e.position) : ''}</div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+        function selectEmp(id) {
+            currentEmpId = id;
+            closeModal('empPickerModal');
+            renderEmpBar();
+            renderToday();
+            renderRecent();
+            renderPunchButtons();
+        }
+        function renderEmpBar() {
+            const e = employees.find(x => x.id === currentEmpId);
+            if (!e) return;
+            const initial = (e.name || '?').slice(-1) || '?';
+            document.getElementById('pickAvatar').textContent = initial;
+            document.getElementById('pickName').textContent = e.name;
+            document.getElementById('pickMeta').textContent = `${e.department || '-'}${e.position ? ' · ' + e.position : ''}`;
+            document.getElementById('topSub').textContent = e.code || '已选择';
+        }
+
+        // ==================== 今日记录 ====================
+        function todayRecord() {
+            return records.find(r => r.employeeId === currentEmpId && r.date === todayStr());
+        }
+        function renderToday() {
+            const card = document.getElementById('todayCard');
+            const e = employees.find(x => x.id === currentEmpId);
+            if (!e) { card.style.display = 'none'; return; }
+            card.style.display = 'block';
+            const rec = todayRecord();
+            const tag = document.getElementById('todayTag');
+            const inEl = document.getElementById('todayIn');
+            const outEl = document.getElementById('todayOut');
+            const hoursEl = document.getElementById('todayHours');
+            if (!rec) {
+                tag.className = 'tag absent'; tag.textContent = '未打卡';
+                inEl.textContent = '--:--'; inEl.className = 'tc-value muted';
+                outEl.textContent = '--:--'; outEl.className = 'tc-value muted';
+                hoursEl.textContent = '--'; hoursEl.className = 'tc-value muted';
+                return;
+            }
+            tag.className = 'tag ' + rec.type; tag.textContent = TYPE_TEXT[rec.type] || rec.type;
+            if (rec.checkInTime) { inEl.textContent = rec.checkInTime; inEl.className = 'tc-value'; }
+            else { inEl.textContent = '--:--'; inEl.className = 'tc-value muted'; }
+            if (rec.checkOutTime) { outEl.textContent = rec.checkOutTime; outEl.className = 'tc-value'; }
+            else { outEl.textContent = '--:--'; outEl.className = 'tc-value muted'; }
+            const h = workHours(rec.checkInTime, rec.checkOutTime);
+            if (h !== null) { hoursEl.textContent = h + ' h'; hoursEl.className = 'tc-value'; }
+            else { hoursEl.textContent = '--'; hoursEl.className = 'tc-value muted'; }
+        }
+        function workHours(t1, t2) {
+            if (!t1 || !t2) return null;
+            const [h1, m1] = t1.split(':').map(Number);
+            const [h2, m2] = t2.split(':').map(Number);
+            const mins = (h2 * 60 + m2) - (h1 * 60 + m1);
+            if (mins < 0) return null;
+            return (mins / 60).toFixed(1);
+        }
+
+        function renderPunchButtons() {
+            const inBtn = document.getElementById('punchInBtn');
+            const outBtn = document.getElementById('punchOutBtn');
+            const inTime = document.getElementById('punchInTime');
+            const outTime = document.getElementById('punchOutTime');
+            if (!currentEmpId) {
+                inBtn.disabled = outBtn.disabled = true;
+                inTime.textContent = outTime.textContent = '未打卡';
+                return;
+            }
+            const rec = todayRecord();
+            inBtn.disabled = !!(rec && rec.checkInTime);
+            outBtn.disabled = !rec || !rec.checkInTime || !!rec.checkOutTime;
+            inTime.textContent = rec && rec.checkInTime ? rec.checkInTime : '未打卡';
+            outTime.textContent = rec && rec.checkOutTime ? rec.checkOutTime : '未打卡';
+        }
+
+        // ==================== 打卡 ====================
+        function punchIn() {
+            if (!currentEmpId) return;
+            const rec = todayRecord();
+            if (rec && rec.checkInTime) { toast('今日已上班打卡'); return; }
+            pendingAction = 'in';
+            document.getElementById('remarkTitle').textContent = '上班打卡';
+            const now = nowTime();
+            const late = now > settings.workStart;
+            document.getElementById('remarkHint').textContent = `当前时间 ${now}，${late ? '已超过上班时间 ' + settings.workStart + '，将记为迟到' : '正常出勤'}`;
+            document.getElementById('remarkInput').value = '';
+            document.getElementById('remarkConfirm').onclick = confirmPunch;
+            openModal('remarkModal');
+        }
+        function punchOut() {
+            if (!currentEmpId) return;
+            const rec = todayRecord();
+            if (!rec || !rec.checkInTime) { toast('请先上班打卡', 'warning'); return; }
+            if (rec.checkOutTime) { toast('今日已下班打卡'); return; }
+            pendingAction = 'out';
+            document.getElementById('remarkTitle').textContent = '下班打卡';
+            const now = nowTime();
+            const early = now < settings.workEnd;
+            document.getElementById('remarkHint').textContent = `当前时间 ${now}，${early ? '早于下班时间 ' + settings.workEnd + '，将记为早退' : '正常下班'}`;
+            document.getElementById('remarkInput').value = '';
+            document.getElementById('remarkConfirm').onclick = confirmPunch;
+            openModal('remarkModal');
+        }
+        function confirmPunch() {
+            const remark = document.getElementById('remarkInput').value.trim();
+            const now = nowTime();
+            const e = employees.find(x => x.id === currentEmpId);
+            if (pendingAction === 'in') {
+                const late = now > settings.workStart;
+                const rec = todayRecord();
+                if (rec) {
+                    // 已有记录但无上班时间（如管理员预设的事假/出差），补填上班打卡
+                    rec.checkInTime = now;
+                    if (!rec.type || ['attendance', 'late', 'earlyLeave'].includes(rec.type)) {
+                        rec.type = late ? 'late' : 'attendance';
+                    }
+                    rec.remark = remark || rec.remark || '';
+                    rec.updatedAt = new Date().toISOString();
+                } else {
+                    records.unshift({
+                        id: uid(),
+                        employeeId: currentEmpId,
+                        employeeName: e ? e.name : '',
+                        department: e ? e.department : '',
+                        date: todayStr(),
+                        checkInTime: now,
+                        checkOutTime: '',
+                        type: late ? 'late' : 'attendance',
+                        remark: remark,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    });
+                }
+                saveRecords();
+                toast(late ? '打卡成功（迟到）' : '上班打卡成功');
+            } else if (pendingAction === 'out') {
+                const rec = todayRecord();
+                if (!rec) { toast('请先上班打卡', 'warning'); closeModal('remarkModal'); return; }
+                const early = now < settings.workEnd;
+                rec.checkOutTime = now;
+                // 仅在出勤类状态自动判定早退；管理员预设的请假/出差等类型保留
+                if (['attendance', 'late'].includes(rec.type) && early) {
+                    rec.type = 'earlyLeave';
+                }
+                if (remark) rec.remark = (rec.remark ? rec.remark + '；' : '') + remark;
+                rec.updatedAt = new Date().toISOString();
+                saveRecords();
+                toast(early ? '打卡成功（早退）' : '下班打卡成功');
+            }
+            closeModal('remarkModal');
+            pendingAction = null;
+            renderToday();
+            renderRecent();
+            renderPunchButtons();
+        }
+
+        // ==================== 最近记录 ====================
+        function renderRecent() {
+            const box = document.getElementById('recList');
+            if (!currentEmpId) { box.innerHTML = `<div class="empty">选择员工后显示打卡记录</div>`; return; }
+            const mine = records.filter(r => r.employeeId === currentEmpId).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 5);
+            if (mine.length === 0) { box.innerHTML = `<div class="empty">暂无打卡记录</div>`; return; }
+            box.innerHTML = mine.map(r => {
+                const d = new Date(r.date + 'T00:00:00');
+                const day = pad(d.getDate());
+                const month = (d.getMonth() + 1) + '月';
+                const h = workHours(r.checkInTime, r.checkOutTime);
+                return `
+                <div class="rec-item">
+                    <div class="r-date"><div class="r-day">${day}</div><div class="r-month">${month}</div></div>
+                    <div class="r-info">
+                        <div class="r-times">
+                            <span class="tag ${r.type}">${escapeHtml(TYPE_TEXT[r.type] || r.type)}</span>
+                            ${r.checkInTime ? escapeHtml(r.checkInTime) : '--:--'}
+                            <span class="arrow">→</span>
+                            ${r.checkOutTime ? escapeHtml(r.checkOutTime) : '--:--'}
+                        </div>
+                        <div class="r-hours">${r.date}${h !== null ? ' · 工时 ' + h + 'h' : ''}${r.remark ? ' · ' + escapeHtml(r.remark) : ''}</div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function openHistory() {
+            if (!currentEmpId) { toast('请先选择员工', 'warning'); return; }
+            const mine = records.filter(r => r.employeeId === currentEmpId).sort((a, b) => (a.date < b.date ? 1 : -1));
+            const body = document.getElementById('historyBody');
+            if (mine.length === 0) { body.innerHTML = `<div class="empty">暂无打卡记录</div>`; }
+            else {
+                body.innerHTML = mine.map(r => {
+                    const h = workHours(r.checkInTime, r.checkOutTime);
+                    return `
+                    <div class="rec-item" style="margin-bottom:8px;">
+                        <div class="r-date"><div class="r-day">${escapeHtml(r.date.slice(8))}</div><div class="r-month">${escapeHtml(String(parseInt(r.date.slice(5, 7))) + '月')}</div></div>
+                        <div class="r-info">
+                            <div class="r-times">
+                                <span class="tag ${r.type}">${escapeHtml(TYPE_TEXT[r.type] || r.type)}</span>
+                                ${r.checkInTime ? escapeHtml(r.checkInTime) : '--:--'}
+                                <span class="arrow">→</span>
+                                ${r.checkOutTime ? escapeHtml(r.checkOutTime) : '--:--'}
+                            </div>
+                            <div class="r-hours">${escapeHtml(r.date)}${h !== null ? ' · 工时 ' + h + 'h' : ''}${r.remark ? ' · ' + escapeHtml(r.remark) : ''}</div>
+                        </div>
+                    </div>`;
+                }).join('');
+            }
+            openModal('historyModal');
+        }
+
+        // ==================== 设置 ====================
+        function openSettings() {
+            document.getElementById('setWorkStart').value = settings.workStart;
+            document.getElementById('setWorkEnd').value = settings.workEnd;
+            openModal('settingsModal');
+        }
+        function saveSettings() {
+            settings.workStart = document.getElementById('setWorkStart').value || '09:00';
+            settings.workEnd = document.getElementById('setWorkEnd').value || '18:00';
+            saveSettingsData();
+            closeModal('settingsModal');
+            toast('设置已保存');
+        }
+
+        // ==================== Toast & 模态框 ====================
+        let toastTimer = null;
+        function toast(msg, type) {
+            type = type || 'success';
+            let el = document.getElementById('clockin-toast');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'clockin-toast';
+                el.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:10px 18px;border-radius:24px;font-size:0.9rem;z-index:9999;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,0.2);transition:opacity 0.3s;max-width:90%;text-align:center;';
+                document.body.appendChild(el);
+            }
+            el.style.background = type === 'warning' ? 'var(--warning)' : 'var(--success)';
+            el.textContent = msg;
+            el.style.opacity = '1';
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => { el.style.opacity = '0'; }, 1800);
+        }
+        function openModal(id) { document.getElementById(id).classList.add('show'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+        document.addEventListener('click', function (e) {
+            if (e.target.classList && e.target.classList.contains('modal')) e.target.classList.remove('show');
+        });
+
+        // ==================== 初始化 ====================
+        function refreshAll() {
+            renderEmpBar();
+            renderToday();
+            renderRecent();
+            renderPunchButtons();
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            loadData();
+            tickClock();
+            setInterval(tickClock, 1000);
+            refreshAll();
+        });
+        // 跨标签同步：考勤表/组织管理改动时刷新
+        window.addEventListener('storage', function (e) {
+            if ([STORAGE_EMP, STORAGE_REC, STORAGE_SET].includes(e.key)) {
+                const prev = currentEmpId;
+                loadData();
+                currentEmpId = employees.find(x => x.id === prev) ? prev : null;
+                refreshAll();
+            }
+        });
+    </script>
+
+    <script src="../../UI/primoUI 0.2/js/modules/theme.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/cloud-sync.js"></script>
+</body>
+
+</html>

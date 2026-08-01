@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>云枢|手机点单</title>
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/variables.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/base.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/layout.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/forms.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/navigation.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/display.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/feedback.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/tabs-browser.css">
+    <style>
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-size: 15px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 手机端容器：居中、最大宽度，桌面预览时两侧留白 */
+        .app {
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* 顶部栏 */
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: var(--main);
+            color: #fff;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+        .topbar .title { font-size: 1.05rem; font-weight: 600; }
+        .topbar .sub { font-size: 0.72rem; opacity: 0.85; margin-top: 2px; }
+
+        .icon-btn {
+            background: rgba(255, 255, 255, 0.18);
+            border: none;
+            color: #fff;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            font-size: 1.1rem;
+            cursor: pointer;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .cart-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: var(--danger);
+            color: #fff;
+            font-size: 0.68rem;
+            min-width: 17px;
+            height: 17px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+        }
+
+        /* 搜索栏 */
+        .search-bar {
+            padding: 10px 12px;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 62px;
+            z-index: 40;
+        }
+        .search-bar input {
+            width: 100%;
+            padding: 9px 14px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.9rem;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        /* 分类标签 */
+        .cat-tabs {
+            display: flex;
+            gap: 6px;
+            padding: 10px 12px;
+            overflow-x: auto;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            -webkit-overflow-scrolling: touch;
+        }
+        .cat-tabs::-webkit-scrollbar { display: none; }
+        .cat-tab {
+            flex-shrink: 0;
+            padding: 6px 14px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 0.85rem;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .cat-tab.active {
+            background: var(--main);
+            color: #fff;
+            border-color: var(--main);
+        }
+
+        /* 菜品列表 */
+        .dish-list {
+            flex: 1;
+            padding: 10px 12px 100px;
+        }
+        .dish-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 8px;
+            box-shadow: var(--shadow);
+        }
+        .dish-item .emoji {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            background: color-mix(in srgb, var(--main) 12%, transparent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+        .dish-item .info { flex: 1; min-width: 0; }
+        .dish-item .name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .dish-item .desc {
+            font-size: 0.75rem;
+            color: color-mix(in srgb, var(--text) 55%, transparent);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .dish-item .price {
+            color: var(--danger);
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-top: 4px;
+        }
+        .spec-tag {
+            font-size: 0.62rem;
+            padding: 1px 6px;
+            border-radius: 8px;
+            background: color-mix(in srgb, var(--warning) 20%, transparent);
+            color: var(--warning);
+        }
+        .add-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: var(--main);
+            color: #fff;
+            border: none;
+            font-size: 1.3rem;
+            line-height: 1;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: transform 0.15s;
+        }
+        .add-btn:active { transform: scale(0.85); }
+        .add-btn.disabled { background: var(--text-placeholder); }
+
+        .empty {
+            text-align: center;
+            padding: 50px 20px;
+            color: color-mix(in srgb, var(--text) 50%, transparent);
+        }
+        .empty .icon { font-size: 2.5rem; margin-bottom: 8px; }
+
+        /* 底部购物车栏 */
+        .cart-bar {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 480px;
+            background: var(--card-bg);
+            border-top: 1px solid var(--border);
+            box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            padding: 10px 14px;
+            gap: 12px;
+            z-index: 45;
+            transition: transform 0.3s;
+        }
+        .cart-bar.hidden { transform: translateX(-50%) translateY(120%); }
+        .cart-bar .cart-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--main);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .cart-bar .cart-count-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: var(--danger);
+            color: #fff;
+            font-size: 0.68rem;
+            min-width: 17px;
+            height: 17px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+        }
+        .cart-bar .total-info { flex: 1; }
+        .cart-bar .total-label { font-size: 0.72rem; color: color-mix(in srgb, var(--text) 55%, transparent); }
+        .cart-bar .total-value { font-size: 1.15rem; font-weight: 700; color: var(--danger); }
+        .cart-bar .submit-btn {
+            background: var(--success);
+            color: #fff;
+            border: none;
+            padding: 11px 22px;
+            border-radius: 22px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .cart-bar .submit-btn:disabled { background: var(--text-placeholder); }
+
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            width: 100%;
+            max-width: 480px;
+            max-height: 88vh;
+            background: var(--card-bg);
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: slideUp 0.25s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .modal-head {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .modal-head h3 { margin: 0; font-size: 1.05rem; }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: color-mix(in srgb, var(--text) 50%, transparent);
+            cursor: pointer;
+            line-height: 1;
+            padding: 0 4px;
+        }
+        .modal-body {
+            padding: 14px 16px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .modal-foot {
+            padding: 12px 16px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        /* 购物车列表项 */
+        .cart-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .cart-item:last-child { border-bottom: none; }
+        .cart-item .ci-info { flex: 1; min-width: 0; }
+        .cart-item .ci-name { font-weight: 600; font-size: 0.9rem; }
+        .cart-item .ci-spec {
+            font-size: 0.72rem;
+            color: color-mix(in srgb, var(--text) 55%, transparent);
+            margin-top: 2px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .cart-item .ci-spec .pill {
+            background: color-mix(in srgb, var(--main) 10%, transparent);
+            color: var(--main);
+            padding: 1px 7px;
+            border-radius: 8px;
+        }
+        .cart-item .ci-price { font-size: 0.82rem; color: var(--danger); margin-top: 3px; }
+        .qty-ctrl { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .qty-ctrl button {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--card-bg);
+            color: var(--text);
+            font-size: 1.1rem;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .qty-ctrl button:active { background: var(--btn-hover); }
+        .qty-ctrl .qty { min-width: 22px; text-align: center; font-weight: 600; }
+
+        /* 规格选择卡片 */
+        .spec-section { margin-bottom: 16px; }
+        .spec-section .spec-title { font-weight: 600; font-size: 0.88rem; margin-bottom: 8px; }
+        .spec-options { display: flex; flex-wrap: wrap; gap: 8px; }
+        .spec-opt {
+            padding: 7px 14px;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .spec-opt.selected {
+            background: var(--main);
+            color: #fff;
+            border-color: var(--main);
+        }
+
+        /* 表单 */
+        .form-group { margin-bottom: 12px; }
+        .form-group label {
+            display: block;
+            font-size: 0.82rem;
+            color: color-mix(in srgb, var(--text) 65%, transparent);
+            margin-bottom: 5px;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: var(--bg);
+            color: var(--text);
+            font-family: inherit;
+        }
+        .form-row { display: flex; gap: 10px; }
+        .form-row .form-group { flex: 1; }
+
+        .seg {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .seg-item {
+            flex: 1;
+            min-width: 70px;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s;
+        }
+        .seg-item.selected {
+            background: var(--main);
+            color: #fff;
+            border-color: var(--main);
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--btn-bg);
+            color: var(--text);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-primary { background: var(--main); color: #fff; border-color: var(--main); flex: 1; }
+        .btn-success { background: var(--success); color: #fff; border-color: var(--success); flex: 1; }
+        .btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+
+        .cart-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: color-mix(in srgb, var(--text) 50%, transparent);
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 0.85rem;
+        }
+        .summary-row.total {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--danger);
+            border-top: 1px dashed var(--border);
+            margin-top: 6px;
+            padding-top: 8px;
+        }
+
+        @media (min-width: 481px) {
+            body { background: color-mix(in srgb, var(--text) 5%, var(--bg)); }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <!-- 顶部栏 -->
+        <div class="topbar">
+            <div>
+                <div class="title">手机点单</div>
+                <div class="sub" id="shopSub">服务员端</div>
+            </div>
+            <button class="icon-btn" onclick="openCart()" aria-label="购物车">
+                🛒
+                <span class="cart-badge" id="topCartBadge" style="display:none;">0</span>
+            </button>
+        </div>
+
+        <!-- 搜索 -->
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="搜索菜品..." oninput="renderDishes()">
+        </div>
+
+        <!-- 分类 -->
+        <div class="cat-tabs" id="catTabs"></div>
+
+        <!-- 菜品列表 -->
+        <div class="dish-list" id="dishList"></div>
+
+        <!-- 底部购物车栏 -->
+        <div class="cart-bar hidden" id="cartBar">
+            <div class="cart-icon" onclick="openCart()">
+                🛒
+                <span class="cart-count-badge" id="cartCountBadge">0</span>
+            </div>
+            <div class="total-info">
+                <div class="total-label">合计</div>
+                <div class="total-value" id="cartTotal">¥0.00</div>
+            </div>
+            <button class="submit-btn" onclick="openOrderModal()">下单</button>
+        </div>
+    </div>
+
+    <!-- 规格选择模态框 -->
+    <div class="modal" id="specModal">
+        <div class="modal-content">
+            <div class="modal-head">
+                <h3 id="specModalTitle">选择规格</h3>
+                <button class="modal-close" onclick="closeModal('specModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="specModalBody"></div>
+            <div class="modal-foot">
+                <button class="btn" onclick="closeModal('specModal')" style="flex:1;">取消</button>
+                <button class="btn btn-primary" onclick="confirmSpec()">加入购物车</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 购物车模态框 -->
+    <div class="modal" id="cartModal">
+        <div class="modal-content">
+            <div class="modal-head">
+                <h3>购物车</h3>
+                <button class="modal-close" onclick="closeModal('cartModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="cartBody"></div>
+            <div class="modal-foot">
+                <button class="btn btn-danger" onclick="clearCart()">清空</button>
+                <button class="btn btn-success" onclick="openOrderModal()">去下单</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 下单信息模态框 -->
+    <div class="modal" id="orderModal">
+        <div class="modal-content">
+            <div class="modal-head">
+                <h3>确认下单</h3>
+                <button class="modal-close" onclick="closeModal('orderModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="orderBody"></div>
+            <div class="modal-foot">
+                <button class="btn" onclick="closeModal('orderModal')" style="flex:1;">取消</button>
+                <button class="btn btn-success" onclick="submitOrder()">确认下单</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 存储配置（与 DishLibrary / OrderService3 共享） ====================
+        const STORAGE_PRODUCT = 'order_products';
+        const STORAGE_CATEGORY = 'order_categories';
+        const STORAGE_FLAVOR = 'flavors';
+        const STORAGE_CART = 'handheld_cart';     // 手机端独立购物车，避免与主 POS 冲突
+        const STORAGE_ORDERS = 'order_records';   // 订单记录（与主系统共享）
+        const DEFAULT_CATEGORIES = ['热门', '饮品', '主食', '小吃', '甜点', '其他'];
+
+        let dishes = [];
+        let categories = [];
+        let flavors = [];
+        let cart = [];
+        let currentCategory = 'all';
+        let pendingSpecProduct = null;   // 正在选择规格的菜品
+        let pendingSpecSelection = {};   // 临时规格选择 { specName: optionValue }
+
+        // ==================== 数据层 ====================
+        function loadDishes() {
+            dishes = JSON.parse(localStorage.getItem(STORAGE_PRODUCT) || '[]');
+            categories = JSON.parse(localStorage.getItem(STORAGE_CATEGORY) || '[]');
+            if (categories.length === 0) categories = DEFAULT_CATEGORIES.slice();
+            flavors = JSON.parse(localStorage.getItem(STORAGE_FLAVOR) || '[]');
+        }
+        function loadCart() {
+            cart = JSON.parse(localStorage.getItem(STORAGE_CART) || '[]');
+        }
+        function saveCart() {
+            localStorage.setItem(STORAGE_CART, JSON.stringify(cart));
+        }
+
+        function formatMoney(num) {
+            return '¥' + Number(num || 0).toFixed(2);
+        }
+        function escapeHtml(str) {
+            return String(str || '').replace(/[&<>"']/g, m => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[m]));
+        }
+
+        // 菜品 emoji 占位（按分类给一个默认图标）
+        function dishEmoji(category) {
+            const map = { '饮品': '🥤', '主食': '🍚', '小吃': '🍟', '甜点': '🍰', '热门': '🔥' };
+            return map[category] || '🍽️';
+        }
+
+        // ==================== 渲染：分类标签 ====================
+        function renderCatTabs() {
+            const tabs = document.getElementById('catTabs');
+            tabs.innerHTML =
+                `<div class="cat-tab ${currentCategory === 'all' ? 'active' : ''}" onclick="setCategory('all')">全部</div>` +
+                categories.map(cat =>
+                    `<div class="cat-tab ${currentCategory === cat ? 'active' : ''}" onclick="setCategory('${escapeHtml(cat)}')">${escapeHtml(cat)}</div>`
+                ).join('');
+        }
+
+        function setCategory(cat) {
+            currentCategory = cat;
+            renderCatTabs();
+            renderDishes();
+        }
+
+        // ==================== 渲染：菜品列表 ====================
+        function renderDishes() {
+            const list = document.getElementById('dishList');
+            const search = document.getElementById('searchInput').value.trim().toLowerCase();
+
+            const filtered = dishes.filter(d => {
+                if (currentCategory !== 'all' && d.category !== currentCategory) return false;
+                if (search &&
+                    !String(d.name || '').toLowerCase().includes(search) &&
+                    !String(d.desc || '').toLowerCase().includes(search)) return false;
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                list.innerHTML = `<div class="empty"><div class="icon">🍽️</div><div>暂无菜品</div>
+                    <div style="font-size:0.8rem;margin-top:6px;">请在菜品库中添加菜品</div></div>`;
+                return;
+            }
+
+            list.innerHTML = filtered.map(d => {
+                const hasSpecs = d.specs && d.specs.length > 0 && d.specs.some(s => s.options && s.options.length > 0);
+                const specTag = hasSpecs ? '<span class="spec-tag">多规格</span>' : '';
+                return `
+                <div class="dish-item">
+                    <div class="emoji">${dishEmoji(d.category)}</div>
+                    <div class="info">
+                        <div class="name">${escapeHtml(d.name || '')}${specTag}</div>
+                        <div class="desc">${escapeHtml(d.desc || '-')}</div>
+                        <div class="price">${formatMoney(d.price)}</div>
+                    </div>
+                    <button class="add-btn" onclick="addToCart('${d.id}')" aria-label="添加">+</button>
+                </div>`;
+            }).join('');
+        }
+
+        // ==================== 购物车操作 ====================
+        function addToCart(productId) {
+            const product = dishes.find(d => d.id === productId);
+            if (!product) return;
+            const hasSpecs = product.specs && product.specs.length > 0 && product.specs.some(s => s.options && s.options.length > 0);
+            if (hasSpecs) {
+                openSpecModal(product);
+            } else {
+                pushCartItem({
+                    productId: product.id,
+                    name: product.name,
+                    price: Number(product.price),
+                    quantity: 1,
+                    specs: []
+                });
+                toast(`已添加 "${product.name}"`);
+            }
+        }
+
+        function pushCartItem(item) {
+            // 同菜品同规格视为同一项
+            const exist = cart.find(ci => ci.productId === item.productId && specsEqual(ci.specs, item.specs));
+            if (exist) {
+                exist.quantity += item.quantity;
+            } else {
+                cart.push(item);
+            }
+            saveCart();
+            renderCartBar();
+        }
+
+        function specsEqual(a, b) {
+            a = a || []; b = b || [];
+            if (a.length !== b.length) return false;
+            return a.every(s => b.some(t => t.name === s.name && t.value === s.value));
+        }
+
+        function changeQty(index, delta) {
+            const item = cart[index];
+            if (!item) return;
+            item.quantity += delta;
+            if (item.quantity <= 0) {
+                cart.splice(index, 1);
+            }
+            saveCart();
+            renderCartBar();
+            renderCartItems();
+        }
+
+        function removeItem(index) {
+            cart.splice(index, 1);
+            saveCart();
+            renderCartBar();
+            renderCartItems();
+        }
+
+        function clearCart() {
+            if (cart.length === 0) return;
+            if (!confirm('确定清空购物车？')) return;
+            cart = [];
+            saveCart();
+            renderCartBar();
+            renderCartItems();
+            closeModal('cartModal');
+        }
+
+        function cartTotal() {
+            return cart.reduce((s, i) => s + Number(i.price) * i.quantity, 0);
+        }
+        function cartCount() {
+            return cart.reduce((s, i) => s + i.quantity, 0);
+        }
+
+        // ==================== 底部购物车栏 ====================
+        function renderCartBar() {
+            const bar = document.getElementById('cartBar');
+            const count = cartCount();
+            const total = cartTotal();
+            if (count === 0) {
+                bar.classList.add('hidden');
+                document.getElementById('topCartBadge').style.display = 'none';
+            } else {
+                bar.classList.remove('hidden');
+                const badge = document.getElementById('topCartBadge');
+                badge.style.display = 'flex';
+                badge.textContent = count;
+                document.getElementById('cartCountBadge').textContent = count;
+            }
+            document.getElementById('cartTotal').textContent = formatMoney(total);
+        }
+
+        // ==================== 购物车弹窗 ====================
+        function openCart() {
+            if (cart.length === 0) {
+                toast('购物车是空的', 'warning');
+                return;
+            }
+            renderCartItems();
+            openModal('cartModal');
+        }
+
+        function renderCartItems() {
+            const body = document.getElementById('cartBody');
+            if (cart.length === 0) {
+                body.innerHTML = `<div class="cart-empty">购物车是空的</div>`;
+                return;
+            }
+            body.innerHTML = cart.map((item, idx) => {
+                const specPills = (item.specs || []).map(s => `<span class="pill">${escapeHtml(s.name)}: ${escapeHtml(s.value)}${escapeHtml(s.unit || '')}</span>`).join('');
+                return `
+                <div class="cart-item">
+                    <div class="ci-info">
+                        <div class="ci-name">${escapeHtml(item.name)}</div>
+                        ${specPills ? `<div class="ci-spec">${specPills}</div>` : ''}
+                        <div class="ci-price">${formatMoney(item.price)} × ${item.quantity} = ${formatMoney(item.price * item.quantity)}</div>
+                    </div>
+                    <div class="qty-ctrl">
+                        <button onclick="changeQty(${idx}, -1)">−</button>
+                        <span class="qty">${item.quantity}</span>
+                        <button onclick="changeQty(${idx}, 1)">+</button>
+                    </div>
+                </div>`;
+            }).join('') + `
+                <div style="margin-top:10px;text-align:right;font-weight:700;color:var(--danger);">
+                    合计 ${formatMoney(cartTotal())}
+                </div>`;
+        }
+
+        // ==================== 规格选择 ====================
+        function openSpecModal(product) {
+            pendingSpecProduct = product;
+            pendingSpecSelection = {};
+            document.getElementById('specModalTitle').textContent = `选择"${product.name}"规格`;
+            const body = document.getElementById('specModalBody');
+            let html = '';
+            product.specs.forEach(spec => {
+                // 默认选中第一个选项
+                if (spec.options && spec.options.length > 0) {
+                    pendingSpecSelection[spec.name] = spec.options[0].value;
+                }
+                html += `
+                <div class="spec-section">
+                    <div class="spec-title">${escapeHtml(spec.name)}</div>
+                    <div class="spec-options">
+                        ${(spec.options || []).map(opt => `
+                            <div class="spec-opt" data-spec="${escapeHtml(spec.name)}" data-value="${escapeHtml(opt.value)}" onclick="selectSpecOption(this)">
+                                ${escapeHtml(opt.value)}${opt.unit ? '<span style="font-size:0.7em;opacity:0.7;">/' + escapeHtml(opt.unit) + '</span>' : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>`;
+            });
+            // 口味选择（通用口味）
+            if (flavors.length > 0) {
+                html += `
+                <div class="spec-section">
+                    <div class="spec-title">口味（可选）</div>
+                    <div class="spec-options">
+                        <div class="spec-opt selected" data-spec="口味" data-value="" onclick="selectSpecOption(this)">不选</div>
+                        ${flavors.map(f => `
+                            <div class="spec-opt" data-spec="口味" data-value="${escapeHtml(f)}" onclick="selectSpecOption(this)">${escapeHtml(f)}</div>
+                        `).join('')}
+                    </div>
+                </div>`;
+            }
+            body.innerHTML = html;
+            // 初始化选中态
+            body.querySelectorAll('.spec-options').forEach(group => {
+                const first = group.querySelector('.spec-opt');
+                if (first && !group.querySelector('.spec-opt.selected')) first.classList.add('selected');
+            });
+            openModal('specModal');
+        }
+
+        function selectSpecOption(el) {
+            const specName = el.dataset.spec;
+            el.parentElement.querySelectorAll('.spec-opt').forEach(o => o.classList.remove('selected'));
+            el.classList.add('selected');
+            pendingSpecSelection[specName] = el.dataset.value;
+        }
+
+        function confirmSpec() {
+            if (!pendingSpecProduct) return;
+            const product = pendingSpecProduct;
+            const specs = [];
+            product.specs.forEach(spec => {
+                const val = pendingSpecSelection[spec.name];
+                if (val) {
+                    const opt = (spec.options || []).find(o => o.value === val);
+                    specs.push({ name: spec.name, value: val, unit: opt ? opt.unit : '' });
+                }
+            });
+            // 口味
+            if (pendingSpecSelection['口味']) {
+                specs.push({ name: '口味', value: pendingSpecSelection['口味'], unit: '' });
+            }
+            pushCartItem({
+                productId: product.id,
+                name: product.name,
+                price: Number(product.price),
+                quantity: 1,
+                specs: specs
+            });
+            closeModal('specModal');
+            toast(`已添加 "${product.name}"`);
+            pendingSpecProduct = null;
+            pendingSpecSelection = {};
+        }
+
+        // ==================== 下单 ====================
+        let orderDining = 'dinein';
+        let orderPayment = 'cash';
+
+        function openOrderModal() {
+            if (cart.length === 0) {
+                toast('购物车是空的', 'warning');
+                return;
+            }
+            closeModal('cartModal');
+            const diningMap = { dinein: '堂食', reserve: '预定', takeout: '外卖', other: '其他' };
+            const paymentMap = { cash: '现金', wechat: '微信', alipay: '支付宝', credit: '信用卡', other: '其他' };
+            const body = document.getElementById('orderBody');
+            body.innerHTML = `
+                <div class="form-group">
+                    <label>就餐方式</label>
+                    <div class="seg" id="diningSeg">
+                        ${Object.keys(diningMap).map(k => `
+                            <div class="seg-item ${k === orderDining ? 'selected' : ''}" data-val="${k}" onclick="selectSeg('dining', this)">${diningMap[k]}</div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>桌号/座位</label>
+                        <input type="text" id="inputTable" placeholder="如：A1">
+                    </div>
+                    <div class="form-group">
+                        <label>就餐人数</label>
+                        <input type="number" id="inputPeople" placeholder="1" min="1" value="1">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>客户</label>
+                        <input type="text" id="inputCustomer" placeholder="客户名称">
+                    </div>
+                    <div class="form-group">
+                        <label>联系方式</label>
+                        <input type="text" id="inputContact" placeholder="电话（可选）">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>支付方式</label>
+                    <div class="seg" id="paymentSeg">
+                        ${Object.keys(paymentMap).map(k => `
+                            <div class="seg-item ${k === orderPayment ? 'selected' : ''}" data-val="${k}" onclick="selectSeg('payment', this)">${paymentMap[k]}</div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>订单备注</label>
+                    <textarea id="inputRemark" rows="2" placeholder="如：少辣、不要香菜"></textarea>
+                </div>
+                <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:6px;">
+                    ${cart.map(i => `
+                        <div class="summary-row">
+                            <span>${escapeHtml(i.name)}${i.specs && i.specs.length ? '(' + i.specs.map(s => escapeHtml(s.value)).join(',') + ')' : ''} ×${i.quantity}</span>
+                            <span>${formatMoney(i.price * i.quantity)}</span>
+                        </div>
+                    `).join('')}
+                    <div class="summary-row total"><span>合计</span><span>${formatMoney(cartTotal())}</span></div>
+                </div>
+            `;
+            openModal('orderModal');
+        }
+
+        function selectSeg(type, el) {
+            el.parentElement.querySelectorAll('.seg-item').forEach(s => s.classList.remove('selected'));
+            el.classList.add('selected');
+            if (type === 'dining') orderDining = el.dataset.val;
+            else orderPayment = el.dataset.val;
+        }
+
+        function getRandomStr(len = 6) {
+            const pool = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            let res = '';
+            for (let i = 0; i < len; i++) res += pool[Math.floor(Math.random() * pool.length)];
+            return res;
+        }
+
+        function submitOrder() {
+            if (cart.length === 0) {
+                toast('购物车是空的', 'warning');
+                return;
+            }
+            const diningMap = { dinein: '堂食', reserve: '预定', takeout: '外卖', other: '其他' };
+            const paymentMap = { cash: '现金', wechat: '微信', alipay: '支付宝', credit: '信用卡', other: '其他' };
+            const table = document.getElementById('inputTable').value.trim();
+            const customer = document.getElementById('inputCustomer').value.trim();
+            const contact = document.getElementById('inputContact').value.trim();
+            const remark = document.getElementById('inputRemark').value.trim();
+
+            const subtotal = cartTotal();
+            const total = subtotal; // 手机端不计服务费/包装/配送费
+            const now = new Date();
+            const order = {
+                id: now.getTime().toString(),
+                code: 'ORD' + now.getTime() + getRandomStr(6),
+                customer: customer || '到店客户',
+                table: table,
+                people: document.getElementById('inputPeople').value || '1',
+                items: cart.map(item => ({
+                    productId: item.productId,
+                    name: item.name,
+                    price: item.price,
+                    quantity: item.quantity,
+                    specs: item.specs || []
+                })),
+                amount: total,
+                subtotal: subtotal,
+                serviceFee: 0,
+                packFee: 0,
+                deliveryFee: 0,
+                payment: orderPayment,
+                paymentText: paymentMap[orderPayment],
+                dining: orderDining,
+                diningText: diningMap[orderDining],
+                contact: contact,
+                remark: remark,
+                status: 'pending',
+                source: 'handheld',
+                createdAt: now.toISOString(),
+                updatedAt: now.toISOString(),
+                memberId: null,
+                memberName: null,
+                memberBalanceBefore: 0,
+                memberBalanceAfter: null
+            };
+
+            const records = JSON.parse(localStorage.getItem(STORAGE_ORDERS) || '[]');
+            records.unshift(order);
+            localStorage.setItem(STORAGE_ORDERS, JSON.stringify(records));
+
+            cart = [];
+            saveCart();
+            renderCartBar();
+            closeModal('orderModal');
+            toast(`下单成功！订单号 ${order.code}`, 'success');
+        }
+
+        // ==================== 模态框 ====================
+        function openModal(id) { document.getElementById(id).classList.add('show'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+        document.addEventListener('click', function (e) {
+            if (e.target.classList && e.target.classList.contains('modal')) {
+                e.target.classList.remove('show');
+            }
+        });
+
+        // ==================== Toast（轻量，避免依赖 primoUI 加载时序） ====================
+        let toastTimer = null;
+        function toast(msg, type) {
+            type = type || 'success';
+            let el = document.getElementById('handheld-toast');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'handheld-toast';
+                el.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:10px 18px;border-radius:24px;font-size:0.9rem;z-index:9999;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,0.2);transition:opacity 0.3s;max-width:90%;text-align:center;';
+                document.body.appendChild(el);
+            }
+            const colors = { success: 'var(--success)', warning: 'var(--warning)', danger: 'var(--danger)' };
+            el.style.background = colors[type] || colors.success;
+            el.textContent = msg;
+            el.style.opacity = '1';
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => { el.style.opacity = '0'; }, 2000);
+        }
+
+        // ==================== 统一刷新 ====================
+        function renderAll() {
+            loadDishes();
+            if (currentCategory !== 'all' && !categories.includes(currentCategory)) currentCategory = 'all';
+            renderCatTabs();
+            renderDishes();
+            renderCartBar();
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            loadDishes();
+            loadCart();
+            renderAll();
+        });
+
+        // 监听菜品库变化：当 DishLibrary 修改菜品/分类/口味时自动同步
+        window.addEventListener('storage', function (e) {
+            if ([STORAGE_PRODUCT, STORAGE_CATEGORY, STORAGE_FLAVOR].includes(e.key)) {
+                renderAll();
+            }
+        });
+        // 窗口重新获得焦点时刷新（同浏览器多标签页编辑）
+        window.addEventListener('focus', renderAll);
+    </script>
+
+    <script src="../../UI/primoUI 0.2/js/modules/theme.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/cloud-sync.js"></script>
+</body>
+
+</html>

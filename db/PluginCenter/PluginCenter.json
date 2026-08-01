@@ -1,0 +1,46 @@
+[
+  {
+    "dbPluginCenter": "本地插件数据库",
+    "dbPluginCenter-V": "0.1"
+  },
+  {
+    "id": "search-tool",
+    "title": "市舶司",
+    "content": "高效的搜索工具，让信息触手可及",
+    "URL": "https://search-tool-123.pages.dev/",
+    "column": "工具",
+    "tags": ["搜索", "工具"],
+    "Developer": "玄影楼阁",
+    "status": "show"
+  },
+  {
+    "id": "jingxv",
+    "title": "镜序",
+    "content": "一站式影视创作辅助工具集",
+    "URL": "https://jingxv.pages.dev/",
+    "column": "工具",
+    "tags": ["拍摄", "工具", "影视"],
+    "Developer": "玄影楼阁",
+    "status": "show"
+  },
+  {
+    "id": "xuanyinglouge",
+    "title": "玄影楼阁",
+    "content": "工具与项目的文档中心",
+    "URL": "https://xuanyinglouge.pages.dev/",
+    "column": "其他",
+    "tags": ["文档", "项目"],
+    "Developer": "玄影楼阁",
+    "status": "show"
+  },
+  {
+    "id": "dianxuege",
+    "title": "典学阁",
+    "content": "专业的班级管理Web系统，助力班级事务",
+    "URL": "https://dianxuege.pages.dev/",
+    "column": "工具",
+    "tags": ["班级管理", "教育"],
+    "Developer": "玄影楼阁",
+    "status": "show"
+  }
+]

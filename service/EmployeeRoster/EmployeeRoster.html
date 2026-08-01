@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>云枢|员工花名册</title>
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/variables.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/base.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/layout.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/forms.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/navigation.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/display.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/feedback.css">
+    <style>
+        body { background: var(--bg); color: var(--text); }
+        .container { max-width: 1280px; margin: 0 auto; padding: 20px; margin-top: 50px; }
+        .section-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem; }
+        hr { border: none; border-top: 1px solid var(--border); margin: 0 0 20px; }
+
+        /* 统计卡片 */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 18px; }
+        .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.1); }
+        .stat-card .icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+        .stat-card .icon.blue { background: color-mix(in srgb, var(--main) 14%, transparent); }
+        .stat-card .icon.green { background: color-mix(in srgb, var(--success) 14%, transparent); }
+        .stat-card .icon.orange { background: color-mix(in srgb, var(--warning) 14%, transparent); }
+        .stat-card .icon.red { background: color-mix(in srgb, var(--danger) 14%, transparent); }
+        .stat-card .icon.purple { background: color-mix(in srgb, #8b5cf6 14%, transparent); }
+        .stat-card .num { font-size: 1.4rem; font-weight: 700; line-height: 1.2; }
+        .stat-card .label { font-size: 0.78rem; color: color-mix(in srgb, var(--text) 60%, transparent); }
+
+        /* 工具栏 */
+        .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 14px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); margin-bottom: 14px; }
+        .toolbar .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; flex: 1; min-width: 200px; }
+        .toolbar input[type=text], .toolbar select { padding: 7px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.88rem; background: var(--bg); color: var(--text); font-family: inherit; }
+        .toolbar input[type=text] { min-width: 160px; flex: 1; }
+        .btn { padding: 7px 13px; border-radius: 6px; font-size: 0.86rem; cursor: pointer; border: 1px solid var(--border); background: var(--btn-bg); color: var(--text); transition: all 0.2s; display: inline-flex; align-items: center; gap: 5px; }
+        .btn:hover { background: var(--btn-hover); }
+        .btn-primary { background: var(--main); color: #fff; border-color: var(--main); }
+        .btn-primary:hover { background: color-mix(in srgb, var(--main) 85%, #000); }
+        .btn-success { background: var(--success); color: #fff; border-color: var(--success); }
+        .btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+        .btn-sm { padding: 4px 10px; font-size: 0.78rem; }
+        .btn-icon { padding: 4px 7px; font-size: 0.92rem; }
+        .toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 0.84rem; cursor: pointer; user-select: none; }
+        .toggle input { width: 16px; height: 16px; cursor: pointer; }
+
+        /* 批量操作栏 */
+        .batch-bar { display: none; align-items: center; gap: 10px; padding: 10px 14px; background: color-mix(in srgb, var(--main) 10%, var(--card-bg)); border: 1px solid var(--main); border-radius: 8px; margin-bottom: 12px; }
+        .batch-bar.show { display: flex; }
+        .batch-bar .info { font-size: 0.86rem; font-weight: 600; color: var(--main); }
+
+        /* 表格 */
+        .table-wrap { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 880px; }
+        thead th { background: var(--bg); padding: 11px 12px; text-align: left; font-size: 0.82rem; font-weight: 600; color: color-mix(in srgb, var(--text) 70%, transparent); border-bottom: 1px solid var(--border); white-space: nowrap; position: sticky; top: 0; }
+        thead th.sortable { cursor: pointer; user-select: none; }
+        thead th.sortable:hover { color: var(--main); }
+        thead th .arrow { font-size: 0.7rem; opacity: 0.6; }
+        tbody td { padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 0.86rem; white-space: nowrap; }
+        tbody tr { transition: background 0.15s; }
+        tbody tr:hover { background: var(--btn-hover); }
+        tbody tr.selected { background: color-mix(in srgb, var(--main) 8%, transparent); }
+        tbody tr.resigned { opacity: 0.55; }
+        .cell-name { display: flex; align-items: center; gap: 8px; }
+        .avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; flex-shrink: 0; }
+        .avatar.male { background: color-mix(in srgb, #1677ff 16%, transparent); color: #1677ff; }
+        .avatar.female { background: color-mix(in srgb, #e84393 16%, transparent); color: #e84393; }
+        .avatar.other { background: color-mix(in srgb, var(--text) 12%, transparent); color: var(--text); }
+        .tag { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+        .tag.active { background: color-mix(in srgb, var(--success) 16%, transparent); color: var(--success); }
+        .tag.leave { background: color-mix(in srgb, var(--warning) 16%, transparent); color: var(--warning); }
+        .tag.resigned { background: color-mix(in srgb, var(--danger) 16%, transparent); color: var(--danger); }
+        .row-actions { display: flex; gap: 4px; }
+        .empty-state { text-align: center; padding: 50px 20px; color: color-mix(in srgb, var(--text) 50%, transparent); }
+        .empty-state .icon { font-size: 2.5rem; margin-bottom: 8px; }
+        .checkbox { width: 16px; height: 16px; cursor: pointer; }
+
+        /* 模态框 */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto; }
+        .modal.show { display: flex; }
+        .modal-content { width: 100%; max-width: 620px; background: var(--card-bg); border-radius: 10px; box-shadow: 0 12px 40px rgba(0,0,0,0.25); overflow: hidden; margin: auto; }
+        .modal-head { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-head h3 { margin: 0; font-size: 1.05rem; }
+        .modal-close { background: none; border: none; font-size: 1.5rem; line-height: 1; cursor: pointer; color: color-mix(in srgb, var(--text) 50%, transparent); }
+        .modal-body { padding: 16px 18px; max-height: 68vh; overflow-y: auto; }
+        .modal-foot { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .form-grid .full { grid-column: 1 / -1; }
+        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+        .form-group { margin-bottom: 0; }
+        .form-group label { display: block; font-size: 0.8rem; color: color-mix(in srgb, var(--text) 65%, transparent); margin-bottom: 5px; }
+        .form-group input, .form-group select { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.88rem; background: var(--bg); color: var(--text); font-family: inherit; }
+        .section-label { font-size: 0.82rem; font-weight: 600; color: var(--main); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px dashed var(--border); }
+        .section-label:first-child { margin-top: 0; }
+
+        /* 详情查看 */
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 18px; }
+        .detail-grid .full { grid-column: 1 / -1; }
+        .detail-item .d-label { font-size: 0.74rem; color: color-mix(in srgb, var(--text) 55%, transparent); margin-bottom: 2px; }
+        .detail-item .d-value { font-size: 0.9rem; font-weight: 500; }
+        .detail-head { display: flex; align-items: center; gap: 14px; padding: 6px 0 14px; border-bottom: 1px dashed var(--border); margin-bottom: 14px; }
+        .detail-head .avatar-lg { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.3rem; }
+        .detail-head .d-name { font-size: 1.1rem; font-weight: 700; }
+        .detail-head .d-sub { font-size: 0.82rem; color: color-mix(in srgb, var(--text) 60%, transparent); }
+
+        @media print {
+            body * { visibility: hidden; }
+            .table-wrap, .table-wrap * { visibility: visible; }
+            .table-wrap { position: static; box-shadow: none; }
+            .row-actions, .batch-bar, .toolbar, .stats-grid, .section-title, hr { display: none !important; }
+            th .checkbox, td .checkbox { display: none !important; }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="nav"></div>
+
+    <div class="container">
+        <h1 class="section-title">员工花名册</h1>
+        <hr>
+
+        <!-- 统计 -->
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <!-- 工具栏 -->
+        <div class="toolbar">
+            <div class="filters">
+                <input type="text" id="searchInput" placeholder="搜索姓名/工号/电话..." oninput="renderTable()">
+                <select id="filterDept" onchange="renderTable()"><option value="all">全部部门</option></select>
+                <select id="filterStatus" onchange="renderTable()">
+                    <option value="all">全部状态</option>
+                    <option value="active">在职</option>
+                    <option value="leave">休假</option>
+                    <option value="resigned">离职</option>
+                </select>
+                <label class="toggle"><input type="checkbox" id="showResigned" onchange="renderTable()"> 显示离职</label>
+            </div>
+            <button class="btn btn-primary" onclick="openEmpModal()">+ 新增员工</button>
+            <button class="btn btn-sm" onclick="exportData('csv')">导出CSV</button>
+            <button class="btn btn-sm" onclick="exportData('json')">导出JSON</button>
+            <button class="btn btn-sm" onclick="window.print()">打印</button>
+        </div>
+
+        <!-- 批量操作栏 -->
+        <div class="batch-bar" id="batchBar">
+            <span class="info" id="batchInfo">已选 0 项</span>
+            <button class="btn btn-sm btn-success" onclick="batchStatus('active')">设为在职</button>
+            <button class="btn btn-sm" onclick="batchStatus('leave')">设为休假</button>
+            <button class="btn btn-sm btn-danger" onclick="batchStatus('resigned')">办理离职</button>
+            <button class="btn btn-sm btn-danger" onclick="batchDelete()">删除</button>
+            <button class="btn btn-sm" onclick="clearSelection()">取消选择</button>
+        </div>
+
+        <!-- 表格 -->
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:36px;"><input type="checkbox" class="checkbox" id="checkAll" onchange="toggleAll(this)"></th>
+                        <th class="sortable" onclick="sortBy('employeeNo')">工号 <span class="arrow" id="arrow-employeeNo"></span></th>
+                        <th class="sortable" onclick="sortBy('name')">姓名 <span class="arrow" id="arrow-name"></span></th>
+                        <th>性别</th>
+                        <th class="sortable" onclick="sortBy('departmentId')">部门 <span class="arrow" id="arrow-departmentId"></span></th>
+                        <th>职位</th>
+                        <th>电话</th>
+                        <th class="sortable" onclick="sortBy('hireDate')">入职日期 <span class="arrow" id="arrow-hireDate"></span></th>
+                        <th>状态</th>
+                        <th style="width:120px;">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="empTbody"></tbody>
+            </table>
+        </div>
+        <div id="emptyHint"></div>
+    </div>
+
+    <!-- 员工编辑模态框 -->
+    <div class="modal" id="empModal">
+        <div class="modal-content">
+            <div class="modal-head"><h3 id="empModalTitle">新增员工</h3><button class="modal-close" onclick="closeModal('empModal')">&times;</button></div>
+            <div class="modal-body">
+                <div class="section-label">基本信息</div>
+                <div class="form-grid">
+                    <div class="form-group"><label>工号</label><input type="text" id="fEmployeeNo" placeholder="如：EMP001"></div>
+                    <div class="form-group"><label>姓名 *</label><input type="text" id="fName" placeholder="员工姓名"></div>
+                    <div class="form-group"><label>性别</label>
+                        <select id="fGender">
+                            <option value="male">男</option>
+                            <option value="female">女</option>
+                            <option value="other">其他</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>生日</label><input type="date" id="fBirthday"></div>
+                    <div class="form-group"><label>身份证号</label><input type="text" id="fIdCard" placeholder="身份证号"></div>
+                    <div class="form-group"><label>所属部门 *</label><select id="fDepartment"></select></div>
+                </div>
+                <div class="section-label">岗位信息</div>
+                <div class="form-grid">
+                    <div class="form-group"><label>职位</label><input type="text" id="fTitle" placeholder="如：经理"></div>
+                    <div class="form-group"><label>状态</label>
+                        <select id="fStatus">
+                            <option value="active">在职</option>
+                            <option value="leave">休假</option>
+                            <option value="resigned">离职</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>入职日期</label><input type="date" id="fHireDate"></div>
+                    <div class="form-group"><label>离职日期</label><input type="date" id="fLeaveDate"></div>
+                    <div class="form-group"><label>基本工资</label><input type="number" id="fSalary" placeholder="月薪（元）" min="0"></div>
+                </div>
+                <div class="section-label">联系方式</div>
+                <div class="form-grid">
+                    <div class="form-group"><label>手机号</label><input type="text" id="fPhone" placeholder="联系电话"></div>
+                    <div class="form-group"><label>邮箱</label><input type="text" id="fEmail" placeholder="电子邮箱"></div>
+                    <div class="form-group"><label>紧急联系人</label><input type="text" id="fEmergencyContact" placeholder="紧急联系人姓名"></div>
+                    <div class="form-group"><label>紧急联系电话</label><input type="text" id="fEmergencyPhone" placeholder="紧急联系电话"></div>
+                    <div class="form-group full"><label>住址</label><input type="text" id="fAddress" placeholder="居住地址"></div>
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button class="btn" onclick="closeModal('empModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveEmp()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 详情查看模态框 -->
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <div class="modal-head"><h3>员工详情</h3><button class="modal-close" onclick="closeModal('detailModal')">&times;</button></div>
+            <div class="modal-body" id="detailBody"></div>
+            <div class="modal-foot">
+                <button class="btn btn-danger" id="detailResignBtn" onclick="quickResign()">办理离职</button>
+                <button class="btn" onclick="closeModal('detailModal')">关闭</button>
+                <button class="btn btn-primary" onclick="openEmpModal(currentDetailId)">编辑</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 存储配置（与组织管理共享） ====================
+        const STORAGE_DEPT = 'org_departments';
+        const STORAGE_EMP = 'org_employees';
+
+        let departments = [];
+        let employees = [];
+        let selectedIds = new Set();
+        let editingId = null;
+        let currentDetailId = null;
+        let sortKey = null;
+        let sortDir = 1;
+
+        function loadData() {
+            departments = JSON.parse(localStorage.getItem(STORAGE_DEPT) || '[]');
+            employees = JSON.parse(localStorage.getItem(STORAGE_EMP) || '[]');
+            seedIfEmpty();
+        }
+        function saveData() {
+            localStorage.setItem(STORAGE_EMP, JSON.stringify(employees));
+        }
+        // 首次若组织侧已建部门但花名册无员工，无需额外种子；此处仅在完全空时给示例
+        function seedIfEmpty() {
+            if (departments.length === 0 && employees.length === 0) {
+                departments = [
+                    { id: 'd1', name: '总经办', parentId: '', leaderId: '', sort: 0 },
+                    { id: 'd2', name: '运营部', parentId: 'd1', leaderId: '', sort: 0 },
+                    { id: 'd3', name: '后厨组', parentId: 'd2', leaderId: '', sort: 0 }
+                ];
+                employees = [
+                    { id: 'e1', employeeNo: 'EMP001', name: '张总', gender: 'male', departmentId: 'd1', title: '总经理', phone: '13800000001', email: 'zhang@yunshu.cn', hireDate: '2023-01-15', status: 'active', birthday: '1985-03-20', idCard: '', emergencyContact: '', emergencyPhone: '', address: '', salary: 0, leaveDate: '' },
+                    { id: 'e2', employeeNo: 'EMP002', name: '李运营', gender: 'female', departmentId: 'd2', title: '运营总监', phone: '13800000002', email: 'li@yunshu.cn', hireDate: '2023-03-01', status: 'active', birthday: '1990-07-12', idCard: '', emergencyContact: '', emergencyPhone: '', address: '', salary: 0, leaveDate: '' },
+                    { id: 'e3', employeeNo: 'EMP003', name: '陈厨师长', gender: 'male', departmentId: 'd3', title: '厨师长', phone: '13800000005', email: 'chen@yunshu.cn', hireDate: '2023-05-10', status: 'active', birthday: '1988-11-25', idCard: '', emergencyContact: '', emergencyPhone: '', address: '', salary: 0, leaveDate: '' }
+                ];
+                localStorage.setItem(STORAGE_DEPT, JSON.stringify(departments));
+                saveData();
+            }
+        }
+
+        function uid(prefix) { return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+        function escapeHtml(str) {
+            return String(str ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+        }
+        function deptName(id) { const d = departments.find(x => x.id === id); return d ? d.name : '未分配'; }
+        function genderText(g) { return ({ male: '男', female: '女', other: '其他' }[g]) || '未知'; }
+        function statusText(s) { return ({ active: '在职', leave: '休假', resigned: '离职' }[s]) || s; }
+        function fmtDate(d) { return d ? String(d).slice(0, 10) : '-'; }
+
+        // ==================== 统计 ====================
+        function renderStats() {
+            const total = employees.length;
+            const active = employees.filter(e => e.status === 'active').length;
+            const leave = employees.filter(e => e.status === 'leave').length;
+            const resigned = employees.filter(e => e.status === 'resigned').length;
+            const deptCount = new Set(employees.map(e => e.departmentId).filter(Boolean)).size;
+            const cards = [
+                { cls: 'blue', icon: '👥', num: total, label: '花名册总数', filter: 'all' },
+                { cls: 'green', icon: '✅', num: active, label: '在职', filter: 'active' },
+                { cls: 'orange', icon: '🌴', num: leave, label: '休假', filter: 'leave' },
+                { cls: 'red', icon: '🚪', num: resigned, label: '离职', filter: 'resigned' },
+                { cls: 'purple', icon: '🏢', num: deptCount, label: '覆盖部门', filter: null }
+            ];
+            document.getElementById('statsGrid').innerHTML = cards.map(c =>
+                `<div class="stat-card" ${c.filter ? `onclick="filterByStatus('${c.filter}')"` : ''}>
+                    <div class="icon ${c.cls}">${c.icon}</div>
+                    <div><div class="num">${c.num}</div><div class="label">${c.label}</div></div>
+                </div>`
+            ).join('');
+        }
+        function filterByStatus(s) {
+            document.getElementById('filterStatus').value = s;
+            document.getElementById('showResigned').checked = (s === 'resigned');
+            renderTable();
+        }
+
+        // ==================== 筛选与排序 ====================
+        function getFiltered() {
+            const search = document.getElementById('searchInput').value.trim().toLowerCase();
+            const fDept = document.getElementById('filterDept').value;
+            const fStatus = document.getElementById('filterStatus').value;
+            const showResigned = document.getElementById('showResigned').checked;
+            let list = employees.filter(e => {
+                if (fDept !== 'all' && e.departmentId !== fDept) return false;
+                if (fStatus !== 'all' && e.status !== fStatus) return false;
+                if (!showResigned && e.status === 'resigned' && fStatus !== 'resigned') return false;
+                if (search &&
+                    !String(e.name || '').toLowerCase().includes(search) &&
+                    !String(e.employeeNo || '').toLowerCase().includes(search) &&
+                    !String(e.phone || '').toLowerCase().includes(search)) return false;
+                return true;
+            });
+            if (sortKey) {
+                list.sort((a, b) => {
+                    let va = a[sortKey] || '', vb = b[sortKey] || '';
+                    if (sortKey === 'departmentId') { va = deptName(va); vb = deptName(vb); }
+                    if (va < vb) return -1 * sortDir;
+                    if (va > vb) return 1 * sortDir;
+                    return 0;
+                });
+            }
+            return list;
+        }
+        function sortBy(key) {
+            if (sortKey === key) sortDir = -sortDir;
+            else { sortKey = key; sortDir = 1; }
+            renderTable();
+        }
+        function updateArrows() {
+            document.querySelectorAll('[id^="arrow-"]').forEach(el => el.textContent = '');
+            if (sortKey) document.getElementById('arrow-' + sortKey).textContent = sortDir > 0 ? '▲' : '▼';
+        }
+
+        // ==================== 表格渲染 ====================
+        function renderTable() {
+            const list = getFiltered();
+            updateArrows();
+            const tbody = document.getElementById('empTbody');
+            const empty = document.getElementById('emptyHint');
+            if (list.length === 0) {
+                tbody.innerHTML = '';
+                empty.innerHTML = `<div class="empty-state"><div class="icon">📋</div><div>暂无员工记录</div>
+                    <div style="font-size:0.85rem;margin-top:6px;">点击"新增员工"添加，或调整筛选条件</div></div>`;
+            } else {
+                empty.innerHTML = '';
+                tbody.innerHTML = list.map(e => {
+                    const initial = (e.name || '?').slice(-1) || '?';
+                    const checked = selectedIds.has(e.id) ? 'checked' : '';
+                    return `
+                    <tr class="${e.status === 'resigned' ? 'resigned' : ''} ${selectedIds.has(e.id) ? 'selected' : ''}" ondblclick="openDetail('${e.id}')">
+                        <td><input type="checkbox" class="checkbox row-check" data-id="${e.id}" ${checked} onchange="toggleSelect('${e.id}', this.checked)"></td>
+                        <td>${escapeHtml(e.employeeNo || '-')}</td>
+                        <td><div class="cell-name"><div class="avatar ${e.gender || 'other'}">${escapeHtml(initial)}</div>${escapeHtml(e.name)}</div></td>
+                        <td>${escapeHtml(genderText(e.gender))}</td>
+                        <td>${escapeHtml(deptName(e.departmentId))}</td>
+                        <td>${escapeHtml(e.title || '-')}</td>
+                        <td>${escapeHtml(e.phone || '-')}</td>
+                        <td>${escapeHtml(fmtDate(e.hireDate))}</td>
+                        <td><span class="tag ${e.status}">${escapeHtml(statusText(e.status))}</span></td>
+                        <td><div class="row-actions">
+                            <button class="btn btn-sm btn-icon" onclick="openDetail('${e.id}')" title="详情">👁</button>
+                            <button class="btn btn-sm btn-icon" onclick="openEmpModal('${e.id}')" title="编辑">✎</button>
+                            <button class="btn btn-sm btn-icon" onclick="deleteEmp('${e.id}')" title="删除">🗑</button>
+                        </div></td>
+                    </tr>`;
+                }).join('');
+            }
+            renderBatchBar();
+        }
+
+        // ==================== 批量选择 ====================
+        function toggleAll(el) {
+            const list = getFiltered();
+            if (el.checked) list.forEach(e => selectedIds.add(e.id));
+            else list.forEach(e => selectedIds.delete(e.id));
+            renderTable();
+        }
+        function toggleSelect(id, checked) {
+            if (checked) selectedIds.add(id); else selectedIds.delete(id);
+            renderBatchBar();
+            // 更新全选状态
+            const list = getFiltered();
+            const allChecked = list.length > 0 && list.every(e => selectedIds.has(e.id));
+            document.getElementById('checkAll').checked = allChecked;
+        }
+        function clearSelection() {
+            selectedIds.clear();
+            document.getElementById('checkAll').checked = false;
+            renderTable();
+        }
+        function renderBatchBar() {
+            const bar = document.getElementById('batchBar');
+            if (selectedIds.size > 0) {
+                bar.classList.add('show');
+                document.getElementById('batchInfo').textContent = `已选 ${selectedIds.size} 项`;
+            } else {
+                bar.classList.remove('show');
+            }
+        }
+        function batchStatus(status) {
+            if (selectedIds.size === 0) return;
+            const ids = Array.from(selectedIds);
+            if (!confirm(`确定将选中的 ${ids.length} 名员工设为"${statusText(status)}"？`)) return;
+            const today = new Date().toISOString().slice(0, 10);
+            ids.forEach(id => {
+                const e = employees.find(x => x.id === id);
+                if (e) {
+                    e.status = status;
+                    if (status === 'resigned' && !e.leaveDate) e.leaveDate = today;
+                    if (status !== 'resigned') e.leaveDate = '';
+                }
+            });
+            saveData();
+            renderAll();
+            toast(`已更新 ${ids.length} 名员工状态`);
+        }
+        function batchDelete() {
+            if (selectedIds.size === 0) return;
+            if (!confirm(`确定删除选中的 ${selectedIds.size} 名员工？此操作不可撤销。`)) return;
+            const ids = Array.from(selectedIds);
+            departments.forEach(d => { if (d.leaderId && ids.includes(d.leaderId)) d.leaderId = ''; });
+            localStorage.setItem(STORAGE_DEPT, JSON.stringify(departments));
+            employees = employees.filter(e => !selectedIds.has(e.id));
+            saveData();
+            clearSelection();
+            renderAll();
+            toast(`已删除 ${ids.length} 名员工`);
+        }
+
+        // ==================== 详情 ====================
+        function openDetail(id) {
+            const e = employees.find(x => x.id === id);
+            if (!e) return;
+            currentDetailId = id;
+            const initial = (e.name || '?').slice(-1) || '?';
+            const body = document.getElementById('detailBody');
+            const items = (label, val) => `<div class="detail-item"><div class="d-label">${label}</div><div class="d-value">${escapeHtml(val || '-')}</div></div>`;
+            body.innerHTML = `
+                <div class="detail-head">
+                    <div class="avatar-lg ${e.gender || 'other'}">${escapeHtml(initial)}</div>
+                    <div>
+                        <div class="d-name">${escapeHtml(e.name)} <span class="tag ${e.status}">${escapeHtml(statusText(e.status))}</span></div>
+                        <div class="d-sub">${escapeHtml(e.employeeNo || '无工号')} · ${escapeHtml(deptName(e.departmentId))} · ${escapeHtml(e.title || '-')}</div>
+                    </div>
+                </div>
+                <div class="detail-grid">
+                    ${items('性别', genderText(e.gender))}
+                    ${items('生日', fmtDate(e.birthday))}
+                    ${items('身份证号', e.idCard)}
+                    ${items('入职日期', fmtDate(e.hireDate))}
+                    ${items('离职日期', fmtDate(e.leaveDate))}
+                    ${items('基本工资', e.salary ? '¥' + Number(e.salary).toFixed(2) : '')}
+                    ${items('手机号', e.phone)}
+                    ${items('邮箱', e.email)}
+                    ${items('紧急联系人', e.emergencyContact)}
+                    ${items('紧急联系电话', e.emergencyPhone)}
+                </div>
+                <div class="detail-item full" style="margin-top:10px;"><div class="d-label">住址</div><div class="d-value">${escapeHtml(e.address || '-')}</div></div>`;
+            document.getElementById('detailResignBtn').style.display = e.status === 'resigned' ? 'none' : '';
+            openModal('detailModal');
+        }
+        function quickResign() {
+            if (!currentDetailId) return;
+            const e = employees.find(x => x.id === currentDetailId);
+            if (!e) return;
+            if (!confirm(`确定为"${e.name}"办理离职？`)) return;
+            e.status = 'resigned';
+            e.leaveDate = new Date().toISOString().slice(0, 10);
+            saveData();
+            closeModal('detailModal');
+            renderAll();
+            toast(`已为 ${e.name} 办理离职`);
+        }
+
+        // ==================== 新增/编辑 ====================
+        function openEmpModal(id) {
+            editingId = id || null;
+            closeModal('detailModal');
+            const deptEl = document.getElementById('fDepartment');
+            deptEl.innerHTML = departments.map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('') || `<option value="">请先创建部门</option>`;
+            if (id) {
+                const e = employees.find(x => x.id === id);
+                document.getElementById('empModalTitle').textContent = '编辑员工';
+                document.getElementById('fEmployeeNo').value = e.employeeNo || '';
+                document.getElementById('fName').value = e.name || '';
+                document.getElementById('fGender').value = e.gender || 'male';
+                document.getElementById('fBirthday').value = e.birthday || '';
+                document.getElementById('fIdCard').value = e.idCard || '';
+                document.getElementById('fDepartment').value = e.departmentId || '';
+                document.getElementById('fTitle').value = e.title || '';
+                document.getElementById('fStatus').value = e.status || 'active';
+                document.getElementById('fHireDate').value = e.hireDate || '';
+                document.getElementById('fLeaveDate').value = e.leaveDate || '';
+                document.getElementById('fSalary').value = e.salary || '';
+                document.getElementById('fPhone').value = e.phone || '';
+                document.getElementById('fEmail').value = e.email || '';
+                document.getElementById('fEmergencyContact').value = e.emergencyContact || '';
+                document.getElementById('fEmergencyPhone').value = e.emergencyPhone || '';
+                document.getElementById('fAddress').value = e.address || '';
+            } else {
+                document.getElementById('empModalTitle').textContent = '新增员工';
+                ['fEmployeeNo', 'fName', 'fBirthday', 'fIdCard', 'fTitle', 'fHireDate', 'fLeaveDate', 'fSalary', 'fPhone', 'fEmail', 'fEmergencyContact', 'fEmergencyPhone', 'fAddress'].forEach(k => document.getElementById(k).value = '');
+                document.getElementById('fGender').value = 'male';
+                document.getElementById('fStatus').value = 'active';
+                document.getElementById('fHireDate').value = new Date().toISOString().slice(0, 10);
+            }
+            openModal('empModal');
+        }
+
+        function saveEmp() {
+            const name = document.getElementById('fName').value.trim();
+            const departmentId = document.getElementById('fDepartment').value;
+            if (!name) { alert('请输入员工姓名'); return; }
+            if (!departmentId) { alert('请选择所属部门'); return; }
+            const data = {
+                employeeNo: document.getElementById('fEmployeeNo').value.trim(),
+                name,
+                gender: document.getElementById('fGender').value,
+                birthday: document.getElementById('fBirthday').value,
+                idCard: document.getElementById('fIdCard').value.trim(),
+                departmentId,
+                title: document.getElementById('fTitle').value.trim(),
+                status: document.getElementById('fStatus').value,
+                hireDate: document.getElementById('fHireDate').value,
+                leaveDate: document.getElementById('fLeaveDate').value,
+                salary: parseFloat(document.getElementById('fSalary').value) || 0,
+                phone: document.getElementById('fPhone').value.trim(),
+                email: document.getElementById('fEmail').value.trim(),
+                emergencyContact: document.getElementById('fEmergencyContact').value.trim(),
+                emergencyPhone: document.getElementById('fEmergencyPhone').value.trim(),
+                address: document.getElementById('fAddress').value.trim()
+            };
+            // 工号唯一性校验
+            if (data.employeeNo) {
+                const dup = employees.find(e => e.employeeNo === data.employeeNo && e.id !== editingId);
+                if (dup) { alert(`工号"${data.employeeNo}"已被"${dup.name}"占用`); return; }
+            }
+            if (editingId) {
+                Object.assign(employees.find(x => x.id === editingId), data);
+            } else {
+                employees.push({ id: uid('e'), ...data });
+            }
+            saveData();
+            renderAll();
+            closeModal('empModal');
+            toast(editingId ? '已更新员工信息' : '已添加员工');
+        }
+
+        function deleteEmp(id) {
+            const e = employees.find(x => x.id === id);
+            if (!e) return;
+            if (!confirm(`确定删除员工"${e.name}"？此操作不可撤销。`)) return;
+            departments.forEach(d => { if (d.leaderId === id) d.leaderId = ''; });
+            localStorage.setItem(STORAGE_DEPT, JSON.stringify(departments));
+            employees = employees.filter(x => x.id !== id);
+            saveData();
+            renderAll();
+            toast(`已删除 ${e.name}`);
+        }
+
+        // ==================== 导出 ====================
+        function exportData(type) {
+            const list = getFiltered();
+            if (list.length === 0) { alert('无数据可导出'); return; }
+            if (type === 'json') {
+                const blob = new Blob([JSON.stringify(list, null, 2)], { type: 'application/json' });
+                download(blob, `roster_${Date.now()}.json`);
+            } else {
+                const headers = ['工号', '姓名', '性别', '部门', '职位', '手机', '邮箱', '入职日期', '状态', '离职日期', '身份证号', '生日', '紧急联系人', '紧急联系电话', '住址', '基本工资'];
+                const rows = list.map(e => [
+                    e.employeeNo || '', e.name || '', genderText(e.gender), deptName(e.departmentId), e.title || '',
+                    e.phone || '', e.email || '', fmtDate(e.hireDate), statusText(e.status), fmtDate(e.leaveDate),
+                    e.idCard || '', fmtDate(e.birthday), e.emergencyContact || '', e.emergencyPhone || '',
+                    e.address || '', e.salary || ''
+                ]);
+                const csv = '\ufeff' + [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+                download(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `roster_${Date.now()}.csv`);
+            }
+        }
+        function download(blob, name) {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = name;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        // ==================== Toast & 模态框 ====================
+        let toastTimer = null;
+        function toast(msg) {
+            let el = document.getElementById('roster-toast');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'roster-toast';
+                el.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:10px 18px;border-radius:24px;font-size:0.9rem;z-index:9999;color:#fff;background:var(--success);box-shadow:0 4px 16px rgba(0,0,0,0.2);transition:opacity 0.3s;';
+                document.body.appendChild(el);
+            }
+            el.textContent = msg;
+            el.style.opacity = '1';
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => { el.style.opacity = '0'; }, 2000);
+        }
+        function openModal(id) { document.getElementById(id).classList.add('show'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+        document.addEventListener('click', function (e) {
+            if (e.target.classList && e.target.classList.contains('modal')) e.target.classList.remove('show');
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { closeModal('empModal'); closeModal('detailModal'); }
+        });
+
+        // ==================== 部门下拉 ====================
+        function refreshDeptFilter() {
+            const sel = document.getElementById('filterDept');
+            const cur = sel.value;
+            sel.innerHTML = `<option value="all">全部部门</option>` + departments.map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('');
+            sel.value = cur || 'all';
+        }
+
+        // ==================== 统一渲染 ====================
+        function renderAll() {
+            renderStats();
+            refreshDeptFilter();
+            renderTable();
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            loadData();
+            renderAll();
+        });
+
+        // 跨标签同步（组织管理改动员工/部门时刷新）
+        window.addEventListener('storage', function (e) {
+            if ([STORAGE_EMP, STORAGE_DEPT].includes(e.key)) {
+                loadData();
+                renderAll();
+            }
+        });
+    </script>
+
+    <script src="../../UI/primoUI 0.2/js/modules/theme.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/cloud-sync.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>语音播报服务</title>
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/variables.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/base.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/layout.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/forms.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/feedback.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/navigation.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/display.css">
+    <script src="../../UI/primoUI 0.2/js/modules/theme.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: inherit;
+            min-height: 100vh;
+        }
+
+        .page-wrap {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 16px;
+            padding-bottom: 60px;
+        }
+
+        /* 顶栏 */
+        .top-bar {
+            background: var(--card-bg);
+            padding: 12px 16px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .top-bar .title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .top-bar .title svg { width: 22px; height: 22px; color: var(--main); }
+        .top-bar .actions { display: flex; gap: 6px; }
+        .top-bar .icon-btn {
+            width: 34px; height: 34px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: var(--btn-bg);
+            color: var(--text);
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: var(--transition);
+            padding: 0; min-width: 0;
+        }
+        .top-bar .icon-btn:hover { background: var(--btn-hover); }
+        .top-bar .icon-btn svg { width: 18px; height: 18px; }
+
+        /* 模式标签 */
+        .mode-tabs {
+            display: flex;
+            gap: 0;
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        .mode-tab {
+            flex: 1;
+            padding: 12px 8px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.88rem;
+            font-weight: 500;
+            color: var(--text-sub);
+            border-bottom: 3px solid transparent;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .mode-tab svg { width: 20px; height: 20px; }
+        .mode-tab:hover { background: var(--btn-hover); }
+        .mode-tab.active {
+            color: var(--main);
+            border-bottom-color: var(--main);
+            background: color-mix(in srgb, var(--main) 6%, transparent);
+        }
+
+        /* 面板 */
+        .panel {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .panel.active { display: block; }
+        .panel-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0 0 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .panel-title svg { width: 18px; height: 18px; color: var(--main); }
+
+        /* 表单 */
+        .form-group { margin-bottom: 14px; }
+        .form-group label {
+            display: block;
+            font-size: 0.84rem;
+            color: var(--text-sub);
+            margin-bottom: 6px;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 0.92rem;
+            font-family: inherit;
+            outline: none;
+            transition: var(--transition);
+            margin: 0;
+            max-width: none;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: var(--main);
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--main) 12%, transparent);
+        }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+
+        .form-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .form-row .form-group { flex: 1; min-width: 180px; }
+
+        /* 按钮 */
+        .btn {
+            padding: 9px 20px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: var(--btn-bg);
+            color: var(--text);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-width: auto;
+        }
+        .btn:hover { background: var(--btn-hover); }
+        .btn svg { width: 16px; height: 16px; }
+        .btn-primary {
+            background: var(--main);
+            color: #fff;
+            border-color: var(--main);
+        }
+        .btn-primary:hover { background: color-mix(in srgb, var(--main) 85%, #000); }
+        .btn-danger {
+            color: var(--danger);
+            border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+        }
+        .btn-danger:hover { background: color-mix(in srgb, var(--danger) 10%, transparent); }
+        .btn-success {
+            background: var(--success);
+            color: #fff;
+            border-color: var(--success);
+        }
+        .btn-success:hover { background: color-mix(in srgb, var(--success) 85%, #000); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* 播报列表 */
+        .announce-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .announce-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: var(--bg);
+            transition: var(--transition);
+        }
+        .announce-item:hover { border-color: var(--main); }
+        .announce-item .time {
+            font-weight: 600;
+            color: var(--main);
+            font-size: 0.92rem;
+            min-width: 50px;
+        }
+        .announce-item .text {
+            flex: 1;
+            font-size: 0.88rem;
+            color: var(--text);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .announce-item .repeat-badge {
+            font-size: 0.72rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: color-mix(in srgb, var(--success) 12%, transparent);
+            color: var(--success);
+            font-weight: 600;
+        }
+        .announce-item .del-btn {
+            width: 28px; height: 28px;
+            border: none;
+            background: transparent;
+            color: var(--danger);
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .announce-item .del-btn:hover { background: color-mix(in srgb, var(--danger) 10%, transparent); }
+        .announce-item .del-btn svg { width: 16px; height: 16px; }
+
+        /* 音量滑块 */
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .slider-row label { min-width: 70px; font-size: 0.84rem; color: var(--text-sub); }
+        .slider-row input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--block-bg);
+            outline: none;
+        }
+        .slider-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px; height: 18px;
+            border-radius: 50%;
+            background: var(--main);
+            cursor: pointer;
+        }
+        .slider-row .value {
+            min-width: 40px;
+            text-align: right;
+            font-size: 0.84rem;
+            color: var(--text-sub);
+        }
+
+        /* 音频可视化 */
+        .visualizer {
+            width: 100%;
+            height: 80px;
+            background: var(--block-bg);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 2px;
+            padding: 8px;
+            overflow: hidden;
+        }
+        .visualizer canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 录音列表 */
+        .recording-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: var(--bg);
+            margin-bottom: 8px;
+        }
+        .recording-item .name {
+            flex: 1;
+            font-size: 0.88rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .recording-item .duration {
+            font-size: 0.78rem;
+            color: var(--text-sub);
+        }
+        .recording-item audio { height: 32px; max-width: 200px; }
+        .recording-item .del-btn {
+            width: 28px; height: 28px;
+            border: none;
+            background: transparent;
+            color: var(--danger);
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .recording-item .del-btn:hover { background: color-mix(in srgb, var(--danger) 10%, transparent); }
+        .recording-item .del-btn svg { width: 16px; height: 16px; }
+
+        /* 状态指示 */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 500;
+        }
+        .status-badge .dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+        }
+        .status-badge.idle { background: var(--block-bg); color: var(--text-sub); }
+        .status-badge.idle .dot { background: var(--text-sub); }
+        .status-badge.active { background: color-mix(in srgb, var(--success) 12%, transparent); color: var(--success); }
+        .status-badge.active .dot { background: var(--success); animation: pulse 1.5s infinite; }
+        .status-badge.recording { background: color-mix(in srgb, var(--danger) 12%, transparent); color: var(--danger); }
+        .status-badge.recording .dot { background: var(--danger); animation: pulse 1s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-placeholder);
+        }
+        .empty-state svg { width: 48px; height: 48px; margin-bottom: 12px; }
+        .empty-state p { font-size: 0.88rem; margin: 0; }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            border-radius: 20px;
+            background: rgba(0,0,0,0.8);
+            color: #fff;
+            font-size: 0.88rem;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.25s;
+            pointer-events: none;
+        }
+        .toast.show { opacity: 1; }
+
+        /* 设备选择 */
+        .device-select {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 0.88rem;
+            cursor: pointer;
+            outline: none;
+        }
+
+        /* 开关 */
+        .switch {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        .switch input { display: none; }
+        .switch .track {
+            width: 40px; height: 22px;
+            border-radius: 11px;
+            background: var(--border);
+            position: relative;
+            transition: var(--transition);
+        }
+        .switch .track::after {
+            content: '';
+            position: absolute;
+            top: 2px; left: 2px;
+            width: 18px; height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            transition: var(--transition);
+        }
+        .switch input:checked + .track { background: var(--main); }
+        .switch input:checked + .track::after { transform: translateX(18px); }
+        .switch .label { font-size: 0.84rem; color: var(--text-sub); }
+
+        /* 响应式 */
+        @media (max-width: 600px) {
+            .mode-tab span { font-size: 0.76rem; }
+            .form-row { flex-direction: column; }
+            .recording-item audio { max-width: 140px; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-wrap">
+        <!-- 顶栏 -->
+        <div class="top-bar">
+            <div class="title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 10v4a1 1 0 0 0 1 1h3l4 4V5L7 9H4a1 1 0 0 0-1 1z"/>
+                    <path d="M16 8a5 5 0 0 1 0 8M19 5a9 9 0 0 1 0 14"/>
+                </svg>
+                语音播报服务
+            </div>
+            <div class="actions">
+                <button class="icon-btn" onclick="window.history.back()" title="返回">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- 模式标签 -->
+        <div class="mode-tabs">
+            <div class="mode-tab active" onclick="switchMode('tts')" data-mode="tts">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 10v4a1 1 0 0 0 1 1h3l4 4V5L7 9H4a1 1 0 0 0-1 1z"/>
+                    <path d="M16 8a5 5 0 0 1 0 8"/>
+                </svg>
+                <span>文字播报</span>
+            </div>
+            <div class="mode-tab" onclick="switchMode('schedule')" data-mode="schedule">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                <span>定时播报</span>
+            </div>
+            <div class="mode-tab" onclick="switchMode('mic')" data-mode="mic">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="2" width="6" height="12" rx="3"/>
+                    <path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"/>
+                </svg>
+                <span>麦克风直播</span>
+            </div>
+            <div class="mode-tab" onclick="switchMode('record')" data-mode="record">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <circle cx="12" cy="12" r="3" fill="currentColor"/>
+                </svg>
+                <span>录制音频</span>
+            </div>
+            <div class="mode-tab" onclick="switchMode('capture')" data-mode="capture">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="3" width="20" height="14" rx="2"/>
+                    <path d="M8 21h8M12 17v4"/>
+                    <path d="M6 7l4 4-4 4M14 7l4 4-4 4" stroke-width="1.5"/>
+                </svg>
+                <span>音频采集</span>
+            </div>
+        </div>
+
+        <!-- ========== 文字播报 ========== -->
+        <div class="panel active" id="panel-tts">
+            <h3 class="panel-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 10v4a1 1 0 0 0 1 1h3l4 4V5L7 9H4a1 1 0 0 0-1 1z"/>
+                    <path d="M16 8a5 5 0 0 1 0 8"/>
+                </svg>
+                文字转语音播报
+            </h3>
+
+            <div class="form-group">
+                <label>播报内容</label>
+                <textarea id="ttsText" placeholder="输入要播报的文字内容..." rows="3">欢迎光临，今日营业时间已开始。</textarea>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>语音引擎</label>
+                    <select id="ttsVoice" class="device-select"></select>
+                </div>
+                <div class="form-group">
+                    <label>语速 (0.5 - 2.0)</label>
+                    <div class="slider-row">
+                        <input type="range" id="ttsRate" min="0.5" max="2" step="0.1" value="1" oninput="document.getElementById('ttsRateVal').textContent = this.value">
+                        <span class="value" id="ttsRateVal">1</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>音调 (0 - 2)</label>
+                    <div class="slider-row">
+                        <input type="range" id="ttsPitch" min="0" max="2" step="0.1" value="1" oninput="document.getElementById('ttsPitchVal').textContent = this.value">
+                        <span class="value" id="ttsPitchVal">1</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>音量 (0 - 1)</label>
+                    <div class="slider-row">
+                        <input type="range" id="ttsVolume" min="0" max="1" step="0.1" value="1" oninput="document.getElementById('ttsVolumeVal').textContent = this.value">
+                        <span class="value" id="ttsVolumeVal">1</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="btn-group" style="margin-top: 8px;">
+                <button class="btn btn-primary" id="ttsPlayBtn" onclick="ttsPlay()">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                    开始播报
+                </button>
+                <button class="btn" id="ttsPauseBtn" onclick="ttsPause()" disabled>
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    暂停
+                </button>
+                <button class="btn btn-danger" id="ttsStopBtn" onclick="ttsStop()" disabled>
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>
+                    停止
+                </button>
+            </div>
+
+            <div style="margin-top: 12px;">
+                <span class="status-badge idle" id="ttsStatus">
+                    <span class="dot"></span> 空闲
+                </span>
+            </div>
+        </div>
+
+        <!-- ========== 定时播报 ========== -->
+        <div class="panel" id="panel-schedule">
+            <h3 class="panel-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                定时播报计划
+            </h3>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>播报时间</label>
+                    <input type="time" id="scheduleTime" value="09:00">
+                </div>
+                <div class="form-group">
+                    <label>播报内容</label>
+                    <input type="text" id="scheduleText" placeholder="输入播报内容...">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>重复模式</label>
+                <select id="scheduleRepeat" class="device-select">
+                    <option value="once">仅一次</option>
+                    <option value="daily">每天</option>
+                    <option value="weekdays">工作日</option>
+                    <option value="weekend">周末</option>
+                </select>
+            </div>
+
+            <div class="btn-group" style="margin-bottom: 16px;">
+                <button class="btn btn-primary" onclick="addSchedule()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                    添加计划
+                </button>
+                <label class="switch">
+                    <input type="checkbox" id="scheduleEnabled" checked onchange="toggleScheduler()">
+                    <span class="track"></span>
+                    <span class="label">启用定时播报</span>
+                </label>
+            </div>
+
+            <div class="announce-list" id="scheduleList">
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <p>暂无定时播报计划</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 麦克风直播 ========== -->
+        <div class="panel" id="panel-mic">
+            <h3 class="panel-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="2" width="6" height="12" rx="3"/>
+                    <path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"/>
+                </svg>
+                麦克风直播
+            </h3>
+
+            <div class="form-group">
+                <label>输入设备（麦克风）</label>
+                <select id="micInput" class="device-select" onchange="changeMicDevice()"></select>
+            </div>
+
+            <div class="form-group">
+                <label>输出设备（扬声器）</label>
+                <select id="micOutput" class="device-select"></select>
+            </div>
+
+            <div class="form-group">
+                <label>音频可视化</label>
+                <div class="visualizer">
+                    <canvas id="micVisualizer"></canvas>
+                </div>
+            </div>
+
+            <div class="btn-group" style="margin-top: 8px;">
+                <button class="btn btn-primary" id="micStartBtn" onclick="startMicLive()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"/><rect x="9" y="2" width="6" height="12" rx="3"/></svg>
+                    开始直播
+                </button>
+                <button class="btn btn-danger" id="micStopBtn" onclick="stopMicLive()" disabled>
+                    <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12"/></svg>
+                    停止直播
+                </button>
+            </div>
+
+            <div style="margin-top: 12px;">
+                <span class="status-badge idle" id="micStatus">
+                    <span class="dot"></span> 未连接
+                </span>
+            </div>
+        </div>
+
+        <!-- ========== 录制音频 ========== -->
+        <div class="panel" id="panel-record">
+            <h3 class="panel-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <circle cx="12" cy="12" r="3" fill="currentColor"/>
+                </svg>
+                音频录制
+            </h3>
+
+            <div class="form-group">
+                <label>录音输入源</label>
+                <select id="recordSource" class="device-select">
+                    <option value="mic">麦克风</option>
+                    <option value="system">系统音频（屏幕共享）</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>录音格式</label>
+                <select id="recordFormat" class="device-select">
+                    <option value="audio/webm">WebM (Opus)</option>
+                    <option value="audio/webm;codecs=opus">WebM (Opus HQ)</option>
+                    <option value="audio/ogg;codecs=opus">OGG (Opus)</option>
+                    <option value="audio/mp4">MP4 (AAC)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>录音可视化</label>
+                <div class="visualizer">
+                    <canvas id="recVisualizer"></canvas>
+                </div>
+            </div>
+
+            <div class="btn-group" style="margin-top: 8px;">
+                <button class="btn btn-danger" id="recStartBtn" onclick="startRecording()">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg>
+                    开始录音
+                </button>
+                <button class="btn" id="recPauseBtn" onclick="pauseRecording()" disabled>
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    暂停
+                </button>
+                <button class="btn btn-primary" id="recStopBtn" onclick="stopRecording()" disabled>
+                    <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12"/></svg>
+                    停止并保存
+                </button>
+            </div>
+
+            <div style="margin-top: 12px; display: flex; align-items: center; gap: 12px;">
+                <span class="status-badge idle" id="recStatus">
+                    <span class="dot"></span> 未开始
+                </span>
+                <span id="recTimer" style="font-size: 0.88rem; color: var(--text-sub); font-family: monospace;">00:00:00</span>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <h4 style="font-size: 0.9rem; margin: 0 0 10px;">已保存录音</h4>
+                <div id="recordingList">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="3" fill="currentColor"/>
+                        </svg>
+                        <p>暂无录音文件</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 音频采集 ========== -->
+        <div class="panel" id="panel-capture">
+            <h3 class="panel-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="3" width="20" height="14" rx="2"/>
+                    <path d="M8 21h8M12 17v4"/>
+                </svg>
+                音频采集直播
+            </h3>
+
+            <p style="font-size: 0.84rem; color: var(--text-sub); margin: 0 0 16px;">
+                采集系统音频、浏览器标签页音频或其他应用程序的音频进行实时播放或转发。
+            </p>
+
+            <div class="form-group">
+                <label>采集来源</label>
+                <select id="captureSource" class="device-select">
+                    <option value="screen">屏幕/系统音频</option>
+                    <option value="tab">浏览器标签页</option>
+                    <option value="window">应用程序窗口</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>输出设备</label>
+                <select id="captureOutput" class="device-select"></select>
+            </div>
+
+            <div class="form-group">
+                <label>音频可视化</label>
+                <div class="visualizer">
+                    <canvas id="captureVisualizer"></canvas>
+                </div>
+            </div>
+
+            <div class="btn-group" style="margin-top: 8px;">
+                <button class="btn btn-primary" id="captureStartBtn" onclick="startCapture()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 3l14 9-14 9V3z"/>
+                    </svg>
+                    开始采集
+                </button>
+                <button class="btn btn-danger" id="captureStopBtn" onclick="stopCapture()" disabled>
+                    <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12"/></svg>
+                    停止采集
+                </button>
+            </div>
+
+            <div style="margin-top: 12px;">
+                <span class="status-badge idle" id="captureStatus">
+                    <span class="dot"></span> 未采集
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ==================== 通用工具 ====================
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2500);
+        }
+
+        function switchMode(mode) {
+            document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelector(`.mode-tab[data-mode="${mode}"]`).classList.add('active');
+            document.getElementById(`panel-${mode}`).classList.add('active');
+        }
+
+        // ==================== 设备枚举 ====================
+        async function enumerateDevices() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(t => t.stop());
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const audioInputs = devices.filter(d => d.kind === 'audioinput');
+                const audioOutputs = devices.filter(d => d.kind === 'audiooutput');
+
+                const fillSelect = (id, list, defaultLabel) => {
+                    const sel = document.getElementById(id);
+                    sel.innerHTML = '';
+                    if (list.length === 0) {
+                        sel.innerHTML = `<option value="">${defaultLabel}</option>`;
+                        return;
+                    }
+                    list.forEach(d => {
+                        const opt = document.createElement('option');
+                        opt.value = d.deviceId;
+                        opt.textContent = d.label || `设备 ${d.deviceId.slice(0, 8)}`;
+                        sel.appendChild(opt);
+                    });
+                };
+
+                fillSelect('micInput', audioInputs, '未检测到麦克风');
+                fillSelect('micOutput', audioOutputs, '默认输出');
+                fillSelect('captureOutput', audioOutputs, '默认输出');
+            } catch (e) {
+                showToast('需要麦克风权限来枚举设备');
+            }
+        }
+
+        // ==================== 文字播报 (TTS) ====================
+        let ttsUtterance = null;
+        let ttsVoices = [];
+
+        function loadVoices() {
+            ttsVoices = speechSynthesis.getVoices();
+            const sel = document.getElementById('ttsVoice');
+            sel.innerHTML = '';
+            const zhVoices = ttsVoices.filter(v => v.lang.startsWith('zh'));
+            const otherVoices = ttsVoices.filter(v => !v.lang.startsWith('zh'));
+            if (zhVoices.length > 0) {
+                const group = document.createElement('optgroup');
+                group.label = '中文语音';
+                zhVoices.forEach((v, i) => {
+                    const opt = document.createElement('option');
+                    opt.value = ttsVoices.indexOf(v);
+                    opt.textContent = v.name;
+                    group.appendChild(opt);
+                });
+                sel.appendChild(group);
+            }
+            if (otherVoices.length > 0) {
+                const group = document.createElement('optgroup');
+                group.label = '其他语言';
+                otherVoices.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = ttsVoices.indexOf(v);
+                    opt.textContent = `${v.name} (${v.lang})`;
+                    group.appendChild(opt);
+                });
+                sel.appendChild(group);
+            }
+            if (ttsVoices.length === 0) {
+                sel.innerHTML = '<option value="">默认语音引擎</option>';
+            }
+        }
+
+        function ttsPlay() {
+            const text = document.getElementById('ttsText').value.trim();
+            if (!text) { showToast('请输入播报内容'); return; }
+            speechSynthesis.cancel();
+            ttsUtterance = new SpeechSynthesisUtterance(text);
+            const voiceIdx = parseInt(document.getElementById('ttsVoice').value);
+            if (!isNaN(voiceIdx) && ttsVoices[voiceIdx]) {
+                ttsUtterance.voice = ttsVoices[voiceIdx];
+            }
+            ttsUtterance.rate = parseFloat(document.getElementById('ttsRate').value);
+            ttsUtterance.pitch = parseFloat(document.getElementById('ttsPitch').value);
+            ttsUtterance.volume = parseFloat(document.getElementById('ttsVolume').value);
+            ttsUtterance.onend = () => updateTtsStatus('idle', '空闲');
+            ttsUtterance.onerror = () => { updateTtsStatus('idle', '错误'); showToast('播报出错'); };
+            speechSynthesis.speak(ttsUtterance);
+            updateTtsStatus('active', '播报中');
+            document.getElementById('ttsPlayBtn').disabled = true;
+            document.getElementById('ttsPauseBtn').disabled = false;
+            document.getElementById('ttsStopBtn').disabled = false;
+        }
+
+        function ttsPause() {
+            if (speechSynthesis.speaking) {
+                speechSynthesis.pause();
+                updateTtsStatus('idle', '已暂停');
+            }
+        }
+
+        function ttsStop() {
+            speechSynthesis.cancel();
+            updateTtsStatus('idle', '空闲');
+            document.getElementById('ttsPlayBtn').disabled = false;
+            document.getElementById('ttsPauseBtn').disabled = true;
+            document.getElementById('ttsStopBtn').disabled = true;
+        }
+
+        function updateTtsStatus(cls, text) {
+            const badge = document.getElementById('ttsStatus');
+            badge.className = `status-badge ${cls}`;
+            badge.innerHTML = `<span class="dot"></span> ${text}`;
+            if (cls === 'idle') {
+                document.getElementById('ttsPlayBtn').disabled = false;
+                document.getElementById('ttsPauseBtn').disabled = true;
+                document.getElementById('ttsStopBtn').disabled = true;
+            }
+        }
+
+        if ('speechSynthesis' in window) {
+            speechSynthesis.onvoiceschanged = loadVoices;
+            loadVoices();
+        }
+
+        // ==================== 定时播报 ====================
+        const SCHEDULE_KEY = 'yunshu_voice_schedules';
+        let schedules = JSON.parse(localStorage.getItem(SCHEDULE_KEY) || '[]');
+        let schedulerInterval = null;
+
+        function saveSchedules() {
+            localStorage.setItem(SCHEDULE_KEY, JSON.stringify(schedules));
+        }
+
+        function addSchedule() {
+            const time = document.getElementById('scheduleTime').value;
+            const text = document.getElementById('scheduleText').value.trim();
+            const repeat = document.getElementById('scheduleRepeat').value;
+            if (!time || !text) { showToast('请填写时间和内容'); return; }
+            schedules.push({ id: Date.now(), time, text, repeat, lastRun: null });
+            saveSchedules();
+            renderSchedules();
+            document.getElementById('scheduleText').value = '';
+            showToast('播报计划已添加');
+        }
+
+        function deleteSchedule(id) {
+            schedules = schedules.filter(s => s.id !== id);
+            saveSchedules();
+            renderSchedules();
+            showToast('计划已删除');
+        }
+
+        function renderSchedules() {
+            const list = document.getElementById('scheduleList');
+            if (schedules.length === 0) {
+                list.innerHTML = `<div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <p>暂无定时播报计划</p>
+                </div>`;
+                return;
+            }
+            const repeatLabels = { once: '仅一次', daily: '每天', weekdays: '工作日', weekend: '周末' };
+            list.innerHTML = schedules.map(s => `
+                <div class="announce-item">
+                    <span class="time">${s.time}</span>
+                    <span class="text">${escapeHtml(s.text)}</span>
+                    <span class="repeat-badge">${repeatLabels[s.repeat]}</span>
+                    <button class="del-btn" onclick="deleteSchedule(${s.id})">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function toggleScheduler() {
+            const enabled = document.getElementById('scheduleEnabled').checked;
+            if (enabled) {
+                startScheduler();
+                showToast('定时播报已启用');
+            } else {
+                stopScheduler();
+                showToast('定时播报已关闭');
+            }
+        }
+
+        function startScheduler() {
+            if (schedulerInterval) clearInterval(schedulerInterval);
+            schedulerInterval = setInterval(checkSchedules, 5000);
+        }
+
+        function stopScheduler() {
+            if (schedulerInterval) { clearInterval(schedulerInterval); schedulerInterval = null; }
+        }
+
+        function checkSchedules() {
+            const now = new Date();
+            const currentTime = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+            const day = now.getDay();
+            const today = now.toDateString();
+
+            schedules.forEach(s => {
+                if (s.time !== currentTime) return;
+                if (s.lastRun === today) return;
+                const shouldRun =
+                    s.repeat === 'daily' ||
+                    (s.repeat === 'weekdays' && day >= 1 && day <= 5) ||
+                    (s.repeat === 'weekend' && (day === 0 || day === 6)) ||
+                    s.repeat === 'once';
+                if (shouldRun) {
+                    speakText(s.text);
+                    s.lastRun = today;
+                    if (s.repeat === 'once') {
+                        schedules = schedules.filter(x => x.id !== s.id);
+                        renderSchedules();
+                    }
+                    saveSchedules();
+                }
+            });
+        }
+
+        function speakText(text) {
+            if (!('speechSynthesis' in window)) return;
+            speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = 'zh-CN';
+            u.rate = parseFloat(document.getElementById('ttsRate').value) || 1;
+            u.pitch = parseFloat(document.getElementById('ttsPitch').value) || 1;
+            u.volume = parseFloat(document.getElementById('ttsVolume').value) || 1;
+            speechSynthesis.speak(u);
+        }
+
+        renderSchedules();
+        if (document.getElementById('scheduleEnabled').checked) startScheduler();
+
+        // ==================== 麦克风直播 ====================
+        let micStream = null;
+        let micContext = null;
+        let micAnalyser = null;
+        let micAnimId = null;
+
+        async function startMicLive() {
+            try {
+                const deviceId = document.getElementById('micInput').value;
+                const constraints = { audio: deviceId ? { deviceId: { exact: deviceId } } : true };
+                micStream = await navigator.mediaDevices.getUserMedia(constraints);
+                micContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = micContext.createMediaStreamSource(micStream);
+                micAnalyser = micContext.createAnalyser();
+                micAnalyser.fftSize = 256;
+                source.connect(micAnalyser);
+                drawVisualizer(micAnalyser, 'micVisualizer');
+                document.getElementById('micStartBtn').disabled = true;
+                document.getElementById('micStopBtn').disabled = false;
+                const badge = document.getElementById('micStatus');
+                badge.className = 'status-badge active';
+                badge.innerHTML = '<span class="dot"></span> 直播中';
+                showToast('麦克风直播已开始');
+            } catch (e) {
+                showToast('无法访问麦克风: ' + e.message);
+            }
+        }
+
+        function stopMicLive() {
+            if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+            if (micAnimId) { cancelAnimationFrame(micAnimId); micAnimId = null; }
+            if (micContext) { micContext.close(); micContext = null; }
+            const canvas = document.getElementById('micVisualizer');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('micStartBtn').disabled = false;
+            document.getElementById('micStopBtn').disabled = true;
+            const badge = document.getElementById('micStatus');
+            badge.className = 'status-badge idle';
+            badge.innerHTML = '<span class="dot"></span> 未连接';
+            showToast('麦克风直播已停止');
+        }
+
+        function changeMicDevice() {
+            if (micStream) { stopMicLive(); startMicLive(); }
+        }
+
+        // ==================== 音频录制 ====================
+        let recStream = null;
+        let recRecorder = null;
+        let recChunks = [];
+        let recContext = null;
+        let recAnalyser = null;
+        let recAnimId = null;
+        let recStartTime = null;
+        let recTimerInterval = null;
+        let recIsPaused = false;
+        const RECORDINGS_KEY = 'yunshu_voice_recordings';
+        let recordings = JSON.parse(localStorage.getItem(RECORDINGS_KEY) || '[]');
+
+        async function startRecording() {
+            try {
+                const source = document.getElementById('recordSource').value;
+                const format = document.getElementById('recordFormat').value;
+                if (source === 'mic') {
+                    recStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                } else {
+                    recStream = await navigator.mediaDevices.getDisplayMedia({ audio: true, video: true });
+                    recStream.getVideoTracks().forEach(t => t.stop());
+                    recStream.getVideoTracks().forEach(t => recStream.removeTrack(t));
+                }
+                const mimeType = MediaRecorder.isTypeSupported(format) ? format : 'audio/webm';
+                recRecorder = new MediaRecorder(recStream, { mimeType });
+                recChunks = [];
+                recRecorder.ondataavailable = e => { if (e.data.size > 0) recChunks.push(e.data); };
+                recRecorder.onstop = saveRecording;
+                recRecorder.start();
+
+                recContext = new (window.AudioContext || window.webkitAudioContext)();
+                const src = recContext.createMediaStreamSource(recStream);
+                recAnalyser = recContext.createAnalyser();
+                recAnalyser.fftSize = 256;
+                src.connect(recAnalyser);
+                drawVisualizer(recAnalyser, 'recVisualizer');
+
+                recStartTime = Date.now();
+                recIsPaused = false;
+                recTimerInterval = setInterval(updateRecTimer, 100);
+
+                document.getElementById('recStartBtn').disabled = true;
+                document.getElementById('recPauseBtn').disabled = false;
+                document.getElementById('recStopBtn').disabled = false;
+                const badge = document.getElementById('recStatus');
+                badge.className = 'status-badge recording';
+                badge.innerHTML = '<span class="dot"></span> 录音中';
+                showToast('录音已开始');
+            } catch (e) {
+                showToast('无法开始录音: ' + e.message);
+            }
+        }
+
+        function pauseRecording() {
+            if (!recRecorder) return;
+            if (recRecorder.state === 'recording') {
+                recRecorder.pause();
+                recIsPaused = true;
+                clearInterval(recTimerInterval);
+                document.getElementById('recPauseBtn').innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> 继续';
+                const badge = document.getElementById('recStatus');
+                badge.className = 'status-badge idle';
+                badge.innerHTML = '<span class="dot"></span> 已暂停';
+            } else if (recRecorder.state === 'paused') {
+                recRecorder.resume();
+                recIsPaused = false;
+                recTimerInterval = setInterval(updateRecTimer, 100);
+                document.getElementById('recPauseBtn').innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg> 暂停';
+                const badge = document.getElementById('recStatus');
+                badge.className = 'status-badge recording';
+                badge.innerHTML = '<span class="dot"></span> 录音中';
+            }
+        }
+
+        function stopRecording() {
+            if (recRecorder && recRecorder.state !== 'inactive') recRecorder.stop();
+            if (recStream) { recStream.getTracks().forEach(t => t.stop()); recStream = null; }
+            if (recAnimId) { cancelAnimationFrame(recAnimId); recAnimId = null; }
+            if (recContext) { recContext.close(); recContext = null; }
+            if (recTimerInterval) { clearInterval(recTimerInterval); recTimerInterval = null; }
+            const canvas = document.getElementById('recVisualizer');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('recStartBtn').disabled = false;
+            document.getElementById('recPauseBtn').disabled = true;
+            document.getElementById('recStopBtn').disabled = true;
+            document.getElementById('recPauseBtn').innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg> 暂停';
+            const badge = document.getElementById('recStatus');
+            badge.className = 'status-badge idle';
+            badge.innerHTML = '<span class="dot"></span> 未开始';
+            document.getElementById('recTimer').textContent = '00:00:00';
+        }
+
+        function updateRecTimer() {
+            if (!recStartTime) return;
+            const elapsed = Math.floor((Date.now() - recStartTime) / 1000);
+            const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+            const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+            const s = String(elapsed % 60).padStart(2, '0');
+            document.getElementById('recTimer').textContent = `${h}:${m}:${s}`;
+        }
+
+        function saveRecording() {
+            const format = document.getElementById('recordFormat').value;
+            const blob = new Blob(recChunks, { type: format });
+            const reader = new FileReader();
+            reader.onload = () => {
+                const rec = {
+                    id: Date.now(),
+                    name: `录音_${new Date().toLocaleString('zh-CN')}`,
+                    data: reader.result,
+                    size: blob.size,
+                    type: format,
+                    duration: document.getElementById('recTimer').textContent
+                };
+                recordings.unshift(rec);
+                if (recordings.length > 20) recordings = recordings.slice(0, 20);
+                localStorage.setItem(RECORDINGS_KEY, JSON.stringify(recordings));
+                renderRecordings();
+                showToast('录音已保存');
+            };
+            reader.readAsDataURL(blob);
+        }
+
+        function deleteRecording(id) {
+            recordings = recordings.filter(r => r.id !== id);
+            localStorage.setItem(RECORDINGS_KEY, JSON.stringify(recordings));
+            renderRecordings();
+            showToast('录音已删除');
+        }
+
+        function renderRecordings() {
+            const list = document.getElementById('recordingList');
+            if (recordings.length === 0) {
+                list.innerHTML = `<div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+                    <p>暂无录音文件</p>
+                </div>`;
+                return;
+            }
+            list.innerHTML = recordings.map(r => `
+                <div class="recording-item">
+                    <span class="name">${escapeHtml(r.name)}</span>
+                    <span class="duration">${r.duration}</span>
+                    <audio controls src="${r.data}"></audio>
+                    <a class="btn" href="${r.data}" download="${r.name}.webm" style="padding: 6px 10px; font-size: 0.82rem;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                    </a>
+                    <button class="del-btn" onclick="deleteRecording(${r.id})">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        renderRecordings();
+
+        // ==================== 音频采集直播 ====================
+        let captureStream = null;
+        let captureContext = null;
+        let captureAnalyser = null;
+        let captureAnimId = null;
+
+        async function startCapture() {
+            try {
+                const source = document.getElementById('captureSource').value;
+                captureStream = await navigator.mediaDevices.getDisplayMedia({
+                    audio: true,
+                    video: source === 'screen'
+                });
+                if (captureStream.getVideoTracks().length > 0) {
+                    captureStream.getVideoTracks().forEach(t => t.stop());
+                    captureStream.getVideoTracks().forEach(t => captureStream.removeTrack(t));
+                }
+                if (captureStream.getAudioTracks().length === 0) {
+                    showToast('未检测到音频流，请确保共享时勾选了音频');
+                    stopCapture();
+                    return;
+                }
+                captureContext = new (window.AudioContext || window.webkitAudioContext)();
+                const src = captureContext.createMediaStreamSource(captureStream);
+                captureAnalyser = captureContext.createAnalyser();
+                captureAnalyser.fftSize = 256;
+                src.connect(captureAnalyser);
+                captureStream.getAudioTracks()[0].onended = () => stopCapture();
+                drawVisualizer(captureAnalyser, 'captureVisualizer');
+                document.getElementById('captureStartBtn').disabled = true;
+                document.getElementById('captureStopBtn').disabled = false;
+                const badge = document.getElementById('captureStatus');
+                badge.className = 'status-badge active';
+                badge.innerHTML = '<span class="dot"></span> 采集中';
+                showToast('音频采集已开始');
+            } catch (e) {
+                showToast('采集失败: ' + e.message);
+            }
+        }
+
+        function stopCapture() {
+            if (captureStream) { captureStream.getTracks().forEach(t => t.stop()); captureStream = null; }
+            if (captureAnimId) { cancelAnimationFrame(captureAnimId); captureAnimId = null; }
+            if (captureContext) { captureContext.close(); captureContext = null; }
+            const canvas = document.getElementById('captureVisualizer');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('captureStartBtn').disabled = false;
+            document.getElementById('captureStopBtn').disabled = true;
+            const badge = document.getElementById('captureStatus');
+            badge.className = 'status-badge idle';
+            badge.innerHTML = '<span class="dot"></span> 未采集';
+        }
+
+        // ==================== 可视化绘制 ====================
+        function drawVisualizer(analyser, canvasId) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            const resize = () => { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; };
+            resize();
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            const animIdKey = canvasId + '_animId';
+
+            function draw() {
+            const modeKey = canvasId.replace('Visualizer', '');
+            let animIdVar = null;
+            if (modeKey === 'mic') animIdVar = 'micAnimId';
+            else if (modeKey === 'rec') animIdVar = 'recAnimId';
+            else if (modeKey === 'capture') animIdVar = 'captureAnimId';
+
+                requestAnimationFrame(draw);
+                analyser.getByteFrequencyData(dataArray);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                const barCount = 48;
+                const barWidth = canvas.width / barCount - 2;
+                const step = Math.floor(bufferLength / barCount);
+                for (let i = 0; i < barCount; i++) {
+                    const value = dataArray[i * step];
+                    const barHeight = (value / 255) * canvas.height * 0.9;
+                    const x = i * (barWidth + 2);
+                    const y = canvas.height - barHeight;
+                    const gradient = ctx.createLinearGradient(0, y, 0, canvas.height);
+                    gradient.addColorStop(0, getComputedStyle(document.documentElement).getPropertyValue('--main').trim() || '#007aff');
+                    gradient.addColorStop(1, getComputedStyle(document.documentElement).getPropertyValue('--main').trim() || '#007aff');
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(x, y, barWidth, barHeight);
+                }
+            }
+            draw();
+        }
+
+        // ==================== 初始化 ====================
+        enumerateDevices();
+        navigator.mediaDevices.addEventListener('devicechange', enumerateDevices);
+    </script>
+</body>
+
+</html>

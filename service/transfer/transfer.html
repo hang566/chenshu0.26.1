@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>文件文字互传</title>
+    <link rel="stylesheet" href="../../UI/primoUI 0.1/css/modules/variables.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.1/css/modules/base.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.1/css/modules/layout.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.1/css/modules/forms.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.1/css/modules/feedback.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.1/css/modules/navigation.css">
+    <script src="../../UI/primoUI 0.1/js/modules/theme.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <style>
+        .wrap {
+            max-width: 600px;
+            margin: 0 auto;
+            min-height: 100vh;
+            position: relative;
+            padding-bottom: 80px;
+        }
+
+        .top-bar {
+            background: var(--card-bg);
+            padding: 14px 16px;
+            text-align: center;
+            font-size: 17px;
+            font-weight: 500;
+            position: sticky;
+            top: 0;
+            z-index: 9;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .top-bar .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--main);
+        }
+
+        .state-wait .status-dot { background: #ff9500 }
+        .state-disconnect .status-dot { background: #ff3b30 }
+        .state-normal .status-dot { background: #34c759 }
+
+        .mode-tabs {
+            display: flex;
+            margin: 0 16px;
+            margin-top: 16px;
+            gap: 0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .mode-tab {
+            flex: 1;
+            padding: 12px 8px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            background: var(--card-bg);
+            color: var(--text);
+            border: none;
+            transition: 0.2s;
+            opacity: 0.6;
+        }
+
+        .mode-tab.active {
+            background: var(--main);
+            color: #fff;
+            opacity: 1;
+        }
+
+        .mode-panel { display: none; }
+        .mode-panel.active { display: block; }
+
+        .qr-card, .chat-card, .upload-card, .lan-card, .bt-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            margin: 16px;
+            padding: 20px;
+        }
+
+        .qr-box {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 16px;
+            margin-bottom: 12px;
+        }
+
+        #qrCanvas {
+            width: 200px;
+            height: 200px;
+            border-radius: 8px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .qr-tip, .card-tip {
+            color: var(--text);
+            font-size: 14px;
+            margin-top: 12px;
+            opacity: 0.7;
+        }
+
+        .chat-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chat-box {
+            padding: 12px 16px;
+            min-height: 200px;
+            max-height: 300px;
+            overflow-y: auto;
+            background: var(--bg);
+        }
+
+        .msg-item { margin: 10px 0; display: flex }
+        .msg-self { justify-content: flex-end }
+        .msg-other { justify-content: flex-start }
+
+        .msg-bubble {
+            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            font-size: 15px;
+            word-break: break-all;
+            line-height: 1.5;
+        }
+
+        .msg-self .msg-bubble {
+            background: var(--main);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+
+        .msg-other .msg-bubble {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px;
+        }
+
+        .upload-area {
+            padding: 24px 20px;
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .upload-area:hover, .upload-area.active {
+            border-color: var(--main);
+            background: rgba(0, 122, 255, 0.05);
+        }
+
+        .upload-icon { font-size: 32px; margin-bottom: 8px }
+        .upload-text { font-size: 15px; color: var(--text); font-weight: 500 }
+        .upload-sub { font-size: 13px; color: var(--text); opacity: 0.6; margin-top: 6px }
+
+        #fileInput { display: none }
+
+        .progress-wrap { margin: 12px 0 0; display: none }
+        .progress-name {
+            font-size: 13px; color: var(--text);
+            margin-bottom: 8px; display: flex; justify-content: space-between;
+        }
+        .progress-bg {
+            width: 100%; height: 6px; background: var(--border);
+            border-radius: 3px; overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%; width: 0%; background: var(--main);
+            transition: 0.15s; border-radius: 3px;
+        }
+
+        .input-footer {
+            position: fixed;
+            bottom: 0; left: 50%;
+            transform: translateX(-50%);
+            max-width: 600px; width: 100%;
+            background: var(--card-bg);
+            border-top: 1px solid var(--border);
+            padding: 10px 16px;
+            display: flex; gap: 10px; align-items: center;
+            box-shadow: 0 -2px 8px var(--shadow);
+        }
+
+        #textInput {
+            flex: 1; padding: 10px 14px;
+            border: 1px solid var(--border); border-radius: 20px;
+            font-size: 15px; outline: none;
+            background: var(--bg); color: var(--text);
+        }
+
+        #textInput:focus { border-color: var(--main) }
+
+        #sendTextBtn {
+            background: var(--main); color: #fff; border: none;
+            border-radius: 20px; padding: 10px 20px; font-size: 15px;
+            cursor: pointer;
+        }
+
+        #sendTextBtn:hover { opacity: 0.9 }
+        #sendTextBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .code-area {
+            width: 100%; min-height: 80px; max-height: 120px;
+            padding: 10px; border: 1px solid var(--border);
+            border-radius: 6px; font-size: 12px; font-family: monospace;
+            background: var(--bg); color: var(--text);
+            resize: vertical; word-break: break-all;
+        }
+
+        .btn-sm {
+            padding: 8px 16px; border: none; border-radius: 6px;
+            font-size: 14px; cursor: pointer; transition: 0.2s;
+        }
+
+        .btn-primary { background: var(--main); color: #fff; }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-outline { background: transparent; color: var(--main); border: 1px solid var(--main); }
+        .btn-outline:hover { background: rgba(0,122,255,0.05); }
+
+        .step-label {
+            font-size: 14px; font-weight: 600; color: var(--text);
+            margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+        }
+
+        .step-num {
+            display: inline-flex; width: 22px; height: 22px;
+            border-radius: 50%; background: var(--main); color: #fff;
+            font-size: 12px; align-items: center; justify-content: center;
+        }
+
+        .bt-device-list {
+            margin-top: 12px;
+        }
+
+        .bt-device-item {
+            padding: 10px 14px; border: 1px solid var(--border);
+            border-radius: 6px; margin-bottom: 8px;
+            display: flex; justify-content: space-between; align-items: center;
+            cursor: pointer; transition: 0.2s;
+        }
+
+        .bt-device-item:hover { border-color: var(--main); background: rgba(0,122,255,0.03); }
+
+        .toast {
+            position: fixed; bottom: 80px; left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); color: #fff;
+            padding: 8px 20px; border-radius: 20px;
+            font-size: 14px; z-index: 999;
+            animation: fadeIn 0.2s;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+
+<body>
+    <div id="nav"></div>
+    <div class="wrap" style="margin-top: 30px;">
+        <!-- 顶部连接状态栏 -->
+        <div class="top-bar state-wait" id="topBar">
+            <div class="status-dot"></div>
+            <span class="state-text">未连接</span>
+        </div>
+
+        <!-- 模式切换标签 -->
+        <div class="mode-tabs">
+            <button class="mode-tab active" data-mode="internet" onclick="switchMode('internet')">互联网</button>
+            <button class="mode-tab" data-mode="lan" onclick="switchMode('lan')">局域网</button>
+            <button class="mode-tab" data-mode="bluetooth" onclick="switchMode('bluetooth')">蓝牙</button>
+        </div>
+
+        <!-- ==================== 互联网模式 ==================== -->
+        <div class="mode-panel active" id="panel-internet">
+            <div class="qr-card">
+                <div class="qr-box">
+                    <canvas id="qrCanvas"></canvas>
+                    <div class="qr-tip">另一台设备打开本网页，扫描上方二维码即可配对</div>
+                </div>
+                <div style="text-align: center; font-size: 13px; color: var(--text); opacity: 0.6;">
+                    <span>设备ID：</span><span id="peerIdDisplay" style="font-weight: 600; color: var(--main);">生成中...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 局域网模式 ==================== -->
+        <div class="mode-panel" id="panel-lan">
+            <div class="lan-card">
+                <div class="step-label"><span class="step-num">1</span>发起方：生成连接码</div>
+                <button class="btn-sm btn-primary" onclick="lanCreateOffer()" id="lanCreateBtn">生成连接码</button>
+                <div id="lanOfferArea" style="margin-top: 12px; display: none;">
+                    <div style="font-size: 13px; color: var(--text); opacity: 0.7; margin-bottom: 6px;">复制以下连接码发送给对方：</div>
+                    <textarea class="code-area" id="lanOfferCode" readonly></textarea>
+                    <button class="btn-sm btn-outline" style="margin-top: 8px;" onclick="copyToClipboard('lanOfferCode')">复制连接码</button>
+                </div>
+            </div>
+            <div class="lan-card">
+                <div class="step-label"><span class="step-num">2</span>接收方：粘贴连接码并生成应答码</div>
+                <textarea class="code-area" id="lanReceiveCode" placeholder="粘贴对方发来的连接码..."></textarea>
+                <button class="btn-sm btn-primary" style="margin-top: 8px;" onclick="lanAcceptOffer()" id="lanAcceptBtn">生成应答码</button>
+                <div id="lanAnswerArea" style="margin-top: 12px; display: none;">
+                    <div style="font-size: 13px; color: var(--text); opacity: 0.7; margin-bottom: 6px;">将以下应答码发回给发起方：</div>
+                    <textarea class="code-area" id="lanAnswerCode" readonly></textarea>
+                    <button class="btn-sm btn-outline" style="margin-top: 8px;" onclick="copyToClipboard('lanAnswerCode')">复制应答码</button>
+                </div>
+            </div>
+            <div class="lan-card">
+                <div class="step-label"><span class="step-num">3</span>发起方：粘贴应答码完成连接</div>
+                <textarea class="code-area" id="lanFinalCode" placeholder="粘贴对方发来的应答码..."></textarea>
+                <button class="btn-sm btn-primary" style="margin-top: 8px;" onclick="lanAcceptAnswer()" id="lanFinalBtn">完成连接</button>
+            </div>
+        </div>
+
+        <!-- ==================== 蓝牙模式 ==================== -->
+        <div class="mode-panel" id="panel-bluetooth">
+            <div class="bt-card">
+                <div class="step-label"><span class="step-num">1</span>搜索蓝牙设备</div>
+                <button class="btn-sm btn-primary" onclick="btSearchDevices()" id="btSearchBtn">搜索附近设备</button>
+                <div class="bt-device-list" id="btDeviceList"></div>
+                <div id="btUnsupported" style="display: none; margin-top: 12px; padding: 10px; background: #fff3e0; border-radius: 6px; font-size: 13px; color: #e65100;">
+                    当前浏览器不支持 Web Bluetooth API，请使用 Chrome/Edge 浏览器（需 HTTPS 或 localhost）。
+                </div>
+            </div>
+            <div class="bt-card" id="btConnectedCard" style="display: none;">
+                <div class="step-label"><span class="step-num">2</span>已连接设备</div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span id="btDeviceName" style="font-weight: 600; color: var(--main);"></span>
+                    <button class="btn-sm btn-outline" onclick="btDisconnect()">断开</button>
+                </div>
+                <div class="card-tip">蓝牙模式仅支持文字消息传输，大文件请使用互联网或局域网模式。</div>
+            </div>
+        </div>
+
+        <!-- 聊天消息卡片（所有模式共用） -->
+        <div class="chat-card">
+            <div class="chat-header">
+                <span>💬</span>
+                <span>消息记录</span>
+            </div>
+            <div class="chat-box" id="chatBox">
+                <div style="text-align: center; color: var(--text); opacity: 0.4; margin-top: 60px; font-size: 14px;">
+                    连接后即可发送文字和文件
+                </div>
+            </div>
+        </div>
+
+        <!-- 文件上传卡片（互联网和局域网模式共用） -->
+        <div class="upload-card" id="uploadCard">
+            <div id="uploadBox" class="upload-area">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">点击或拖拽文件到此处</div>
+                <div class="upload-sub">支持图片、文档、视频、压缩包</div>
+            </div>
+            <input id="fileInput" multiple type="file">
+            <div class="progress-wrap" id="progressBox">
+                <div class="progress-name">
+                    <span id="progressName">正在发送...</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="progress-bg">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部文字输入框 -->
+    <div class="input-footer">
+        <input id="textInput" placeholder="输入文字消息..." maxlength="500">
+        <button id="sendTextBtn" disabled>发送</button>
+    </div>
+
+    <script>
+        // ==================== 公共工具 ====================
+        const CHUNK_SIZE = 64 * 1024; // 64KB
+        let currentMode = 'internet';
+        let isConnected = false;
+        let recvFileCache = new Map();
+        const pageUrl = location.origin + location.pathname;
+
+        // DOM 节点
+        const topBar = document.getElementById("topBar");
+        const chatBox = document.getElementById("chatBox");
+        const textInput = document.getElementById("textInput");
+        const sendTextBtn = document.getElementById("sendTextBtn");
+        const uploadBox = document.getElementById("uploadBox");
+        const fileInput = document.getElementById("fileInput");
+        const progressBox = document.getElementById("progressBox");
+        const progressName = document.getElementById("progressName");
+        const progressPercent = document.getElementById("progressPercent");
+        const progressBar = document.getElementById("progressBar");
+
+        function showToast(msg, duration = 2000) {
+            const t = document.createElement('div');
+            t.className = 'toast';
+            t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), duration);
+        }
+
+        function updateState(type, text) {
+            topBar.className = "top-bar";
+            if (type === "connect") { topBar.classList.add("state-normal"); isConnected = true; sendTextBtn.disabled = false; }
+            if (type === "waiting") { topBar.classList.add("state-wait"); }
+            if (type === "disconnect") { topBar.classList.add("state-disconnect"); isConnected = false; sendTextBtn.disabled = true; }
+            topBar.querySelector(".state-text").innerText = text;
+        }
+
+        function addChatMsg(text, isSelf) {
+            // 清除占位提示
+            const placeholder = chatBox.querySelector('div[style*="text-align: center"]');
+            if (placeholder) placeholder.remove();
+
+            const div = document.createElement("div");
+            div.className = "msg-item " + (isSelf ? "msg-self" : "msg-other");
+            div.innerHTML = `<div class="msg-bubble">${text}</div>`;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function copyToClipboard(elementId) {
+            const el = document.getElementById(elementId);
+            el.select();
+            document.execCommand('copy');
+            showToast('已复制到剪贴板');
+        }
+
+        // 模式切换
+        function switchMode(mode) {
+            // 断开当前连接
+            cleanupCurrentConnection();
+            currentMode = mode;
+
+            // 更新标签状态
+            document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.mode-tab[data-mode="${mode}"]`).classList.add('active');
+
+            // 切换面板
+            document.querySelectorAll('.mode-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(`panel-${mode}`).classList.add('active');
+
+            // 蓝牙模式隐藏文件上传
+            document.getElementById('uploadCard').style.display = mode === 'bluetooth' ? 'none' : 'block';
+
+            // 重置状态
+            updateState('disconnect', '未连接');
+            chatBox.innerHTML = '<div style="text-align: center; color: var(--text); opacity: 0.4; margin-top: 60px; font-size: 14px;">连接后即可发送文字和文件</div>';
+
+            // 初始化对应模式
+            if (mode === 'internet') initInternetMode();
+            if (mode === 'lan') initLanMode();
+            if (mode === 'bluetooth') initBluetoothMode();
+        }
+
+        function cleanupCurrentConnection() {
+            if (currentMode === 'internet' && internetPeer) {
+                internetPeer.destroy();
+                internetPeer = null;
+            }
+            if (currentMode === 'lan' && lanPC) {
+                lanPC.close();
+                lanPC = null;
+            }
+            if (currentMode === 'bluetooth' && btServer) {
+                btDisconnect();
+            }
+        }
+
+        // ==================== 互联网模式 (PeerJS) ====================
+        let internetPeer = null;
+        let internetConn = null;
+
+        function initInternetMode() {
+            updateState('waiting', '正在连接信令服务器...');
+
+            // 生成随机设备ID
+            const deviceId = 'ys-' + Math.random().toString(36).substr(2, 8);
+            internetPeer = new Peer(deviceId);
+
+            internetPeer.on('open', (id) => {
+                document.getElementById('peerIdDisplay').textContent = id;
+                // 生成二维码（扫码后带参数进入房间）
+                const connectUrl = pageUrl + '?m=internet&peer=' + id;
+                QRCode.toCanvas(document.getElementById('qrCanvas'), connectUrl, { width: 200 }, (err) => {
+                    if (err) console.error(err);
+                });
+                updateState('waiting', '等待对方扫码连接');
+
+                // 检查 URL 参数，如果是被扫码进入的
+                const params = new URLSearchParams(location.search);
+                if (params.get('m') === 'internet' && params.get('peer')) {
+                    connectToPeer(params.get('peer'));
+                }
+            });
+
+            internetPeer.on('connection', (conn) => {
+                internetConn = conn;
+                bindInternetConn(conn);
+            });
+
+            internetPeer.on('error', (err) => {
+                console.error('PeerJS error:', err);
+                updateState('disconnect', '连接错误：' + err.type);
+                showToast('连接错误，请刷新重试');
+            });
+        }
+
+        function connectToPeer(targetId) {
+            updateState('waiting', '正在连接对方设备...');
+            internetConn = internetPeer.connect(targetId, { reliable: true });
+            bindInternetConn(internetConn);
+        }
+
+        function bindInternetConn(conn) {
+            conn.on('open', () => {
+                updateState('connect', '已连接（互联网模式）');
+                showToast('连接成功！可以发送文字和文件');
+            });
+
+            conn.on('data', (data) => {
+                handleReceivedData(data);
+            });
+
+            conn.on('close', () => {
+                updateState('disconnect', '连接已断开');
+                showToast('对方已断开连接');
+            });
+
+            conn.on('error', (err) => {
+                console.error('Connection error:', err);
+                updateState('disconnect', '连接错误');
+            });
+        }
+
+        // ==================== 局域网模式 (手动信令 WebRTC) ====================
+        let lanPC = null;
+        let lanDataChannel = null;
+
+        function initLanMode() {
+            updateState('waiting', '局域网模式 - 请按步骤操作');
+
+            // 检查 URL 参数
+            const params = new URLSearchParams(location.search);
+            if (params.get('m') === 'lan') {
+                showToast('请在下方粘贴对方发来的连接码');
+            }
+        }
+
+        async function lanCreateOffer() {
+            try {
+                lanPC = new RTCPeerConnection();
+                lanDataChannel = lanPC.createDataChannel('transfer', { ordered: true });
+                bindLanDataChannel(lanDataChannel);
+
+                const offer = await lanPC.createOffer();
+                await lanPC.setLocalDescription(offer);
+
+                // 等待 ICE 收集完成
+                await waitForIceComplete(lanPC);
+
+                const offerCode = btoa(JSON.stringify(lanPC.localDescription));
+                document.getElementById('lanOfferCode').value = offerCode;
+                document.getElementById('lanOfferArea').style.display = 'block';
+                document.getElementById('lanCreateBtn').disabled = true;
+                updateState('waiting', '等待对方应答...');
+                showToast('连接码已生成，请复制发送给对方');
+            } catch (err) {
+                console.error('Create offer error:', err);
+                showToast('生成连接码失败');
+            }
+        }
+
+        async function lanAcceptOffer() {
+            const code = document.getElementById('lanReceiveCode').value.trim();
+            if (!code) { showToast('请粘贴连接码'); return; }
+
+            try {
+                lanPC = new RTCPeerConnection();
+
+                lanPC.ondatachannel = (event) => {
+                    lanDataChannel = event.channel;
+                    bindLanDataChannel(lanDataChannel);
+                };
+
+                const offer = JSON.parse(atob(code));
+                await lanPC.setRemoteDescription(offer);
+
+                const answer = await lanPC.createAnswer();
+                await lanPC.setLocalDescription(answer);
+
+                await waitForIceComplete(lanPC);
+
+                const answerCode = btoa(JSON.stringify(lanPC.localDescription));
+                document.getElementById('lanAnswerCode').value = answerCode;
+                document.getElementById('lanAnswerArea').style.display = 'block';
+                document.getElementById('lanAcceptBtn').disabled = true;
+                showToast('应答码已生成，请复制发回给发起方');
+            } catch (err) {
+                console.error('Accept offer error:', err);
+                showToast('连接码无效或格式错误');
+            }
+        }
+
+        async function lanAcceptAnswer() {
+            const code = document.getElementById('lanFinalCode').value.trim();
+            if (!code) { showToast('请粘贴应答码'); return; }
+
+            try {
+                const answer = JSON.parse(atob(code));
+                await lanPC.setRemoteDescription(answer);
+                document.getElementById('lanFinalBtn').disabled = true;
+                updateState('waiting', '正在建立连接...');
+                showToast('应答码已接受，等待连接建立');
+            } catch (err) {
+                console.error('Accept answer error:', err);
+                showToast('应答码无效或格式错误');
+            }
+        }
+
+        function waitForIceComplete(pc) {
+            return new Promise((resolve) => {
+                if (pc.iceGatheringState === 'complete') {
+                    resolve();
+                } else {
+                    const checkState = () => {
+                        if (pc.iceGatheringState === 'complete') {
+                            pc.removeEventListener('icegatheringstatechange', checkState);
+                            resolve();
+                        }
+                    };
+                    pc.addEventListener('icegatheringstatechange', checkState);
+                    // 超时兜底（最多等 3 秒）
+                    setTimeout(resolve, 3000);
+                }
+            });
+        }
+
+        function bindLanDataChannel(dc) {
+            dc.onopen = () => {
+                updateState('connect', '已连接（局域网模式）');
+                showToast('连接成功！可以发送文字和文件');
+            };
+
+            dc.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleReceivedData(data);
+            };
+
+            dc.onclose = () => {
+                updateState('disconnect', '连接已断开');
+            };
+
+            dc.onerror = (err) => {
+                console.error('DataChannel error:', err);
+                updateState('disconnect', '连接错误');
+            };
+        }
+
+        // ==================== 蓝牙模式 (Web Bluetooth API) ====================
+        let btServer = null;
+        let btCharacteristic = null;
+        const BT_SERVICE_UUID = '0000ffe0-0000-1000-8000-00805f9b34fb';
+        const BT_CHAR_UUID = '0000ffe1-0000-1000-8000-00805f9b34fb';
+
+        function initBluetoothMode() {
+            if (!navigator.bluetooth) {
+                document.getElementById('btUnsupported').style.display = 'block';
+                document.getElementById('btSearchBtn').disabled = true;
+                updateState('disconnect', '浏览器不支持蓝牙');
+                return;
+            }
+            updateState('waiting', '蓝牙模式 - 请搜索设备');
+        }
+
+        async function btSearchDevices() {
+            try {
+                updateState('waiting', '正在搜索蓝牙设备...');
+                showToast('请在弹出窗口中选择设备');
+
+                const device = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: [BT_SERVICE_UUID, 'generic_access', 'generic_attribute']
+                });
+
+                document.getElementById('btDeviceName').textContent = device.name || '未知设备';
+                document.getElementById('btConnectedCard').style.display = 'block';
+                updateState('waiting', '正在连接 ' + (device.name || '设备') + '...');
+
+                await btConnect(device);
+            } catch (err) {
+                console.error('Bluetooth search error:', err);
+                if (err.name !== 'NotFoundError') {
+                    showToast('搜索失败：' + err.message);
+                }
+                updateState('waiting', '蓝牙模式 - 请搜索设备');
+            }
+        }
+
+        async function btConnect(device) {
+            try {
+                btServer = await device.gatt.connect();
+                updateState('waiting', '正在发现服务...');
+
+                const service = await btServer.getPrimaryService(BT_SERVICE_UUID)
+                    .catch(() => btServer.getPrimaryServices().then(services => services[0]));
+
+                const characteristics = await service.getCharacteristics();
+                btCharacteristic = characteristics.find(c => c.properties.write || c.properties.writeWithoutResponse)
+                    || characteristics[0];
+
+                if (btCharacteristic.properties.notify) {
+                    await btCharacteristic.startNotifications();
+                    btCharacteristic.addEventListener('characteristicvaluechanged', btOnData);
+                }
+
+                updateState('connect', '已连接（蓝牙：' + (device.name || '设备') + '）');
+                showToast('蓝牙连接成功！');
+            } catch (err) {
+                console.error('Bluetooth connect error:', err);
+                showToast('连接失败：' + err.message);
+                updateState('disconnect', '蓝牙连接失败');
+            }
+        }
+
+        function btOnData(event) {
+            const value = event.target.value;
+            let text = '';
+            for (let i = 0; i < value.byteLength; i++) {
+                text += String.fromCharCode(value.getUint8(i));
+            }
+            addChatMsg(text, false);
+        }
+
+        async function btSendText(text) {
+            if (!btCharacteristic) { showToast('蓝牙未连接'); return; }
+
+            try {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(text);
+
+                // 蓝牙 BLE 每次最多发 20 字节
+                const chunkSize = 20;
+                for (let i = 0; i < data.length; i += chunkSize) {
+                    const chunk = data.slice(i, i + chunkSize);
+                    if (btCharacteristic.properties.writeWithoutResponse) {
+                        await btCharacteristic.writeValueWithoutResponse(chunk);
+                    } else {
+                        await btCharacteristic.writeValue(chunk);
+                    }
+                }
+                addChatMsg(text, true);
+            } catch (err) {
+                console.error('Bluetooth send error:', err);
+                showToast('发送失败：' + err.message);
+            }
+        }
+
+        function btDisconnect() {
+            if (btServer && btServer.connected) {
+                btServer.disconnect();
+            }
+            btServer = null;
+            btCharacteristic = null;
+            document.getElementById('btConnectedCard').style.display = 'none';
+            updateState('waiting', '蓝牙模式 - 请搜索设备');
+            showToast('已断开蓝牙连接');
+        }
+
+        // ==================== 数据收发处理（互联网+局域网共用） ====================
+        function handleReceivedData(data) {
+            if (data.type === 'text') {
+                addChatMsg(data.content, false);
+                return;
+            }
+            if (data.type === 'file_head') {
+                recvFileCache.set(data.fid, { name: data.name, chunks: [] });
+                return;
+            }
+            if (data.type === 'chunk') {
+                const task = recvFileCache.get(data.fid);
+                if (!task) return;
+                task.chunks.push(data.data);
+                const percent = ((task.chunks.length / data.total) * 100).toFixed(1);
+                if (task.chunks.length % 10 === 0 || task.chunks.length === data.total) {
+                    showToast(`接收中 ${percent}%`, 1000);
+                }
+                if (task.chunks.length === data.total) {
+                    const blob = new Blob(task.chunks);
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = task.name;
+                    addChatMsg(`收到文件：${task.name} <a href="${url}" download="${task.name}" style="color:var(--main)">点击下载</a>`, false);
+                    recvFileCache.delete(data.fid);
+                    showToast(`文件 ${task.name} 接收完成`);
+                }
+            }
+        }
+
+        function getActiveConnection() {
+            if (currentMode === 'internet') return internetConn;
+            if (currentMode === 'lan') return lanDataChannel;
+            return null;
+        }
+
+        function isConnectionOpen() {
+            if (currentMode === 'internet') return internetConn && internetConn.open;
+            if (currentMode === 'lan') return lanDataChannel && lanDataChannel.readyState === 'open';
+            if (currentMode === 'bluetooth') return btCharacteristic !== null;
+            return false;
+        }
+
+        function sendViaConnection(obj) {
+            if (currentMode === 'internet' && internetConn && internetConn.open) {
+                internetConn.send(obj);
+            } else if (currentMode === 'lan' && lanDataChannel && lanDataChannel.readyState === 'open') {
+                lanDataChannel.send(JSON.stringify(obj));
+            }
+        }
+
+        // ==================== 发送文本 ====================
+        function sendTextMsg() {
+            const txt = textInput.value.trim();
+            if (!txt) return;
+
+            if (!isConnectionOpen()) {
+                showToast('未连接对方，无法发送');
+                return;
+            }
+
+            if (currentMode === 'bluetooth') {
+                btSendText(txt);
+            } else {
+                sendViaConnection({ type: 'text', content: txt });
+                addChatMsg(txt, true);
+            }
+            textInput.value = "";
+        }
+
+        // ==================== 发送文件 ====================
+        async function sendFile(file) {
+            if (currentMode === 'bluetooth') {
+                showToast('蓝牙模式暂不支持文件传输，请使用互联网或局域网模式');
+                return;
+            }
+
+            if (!isConnectionOpen()) {
+                showToast('还未连接对方设备');
+                return;
+            }
+
+            progressBox.style.display = "block";
+            progressName.innerText = "正在发送：" + file.name;
+            progressPercent.innerText = "0%";
+            progressBar.style.width = "0%";
+
+            const fid = Math.random().toString(36).slice(2);
+            const buffer = await file.arrayBuffer();
+            const totalChunk = Math.ceil(buffer.byteLength / CHUNK_SIZE);
+
+            sendViaConnection({ type: "file_head", fid, name: file.name, total: totalChunk });
+            addChatMsg(`正在发送文件：${file.name}`, true);
+
+            for (let i = 0; i < totalChunk; i++) {
+                const slice = buffer.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+
+                // 互联网模式可以直接发 ArrayBuffer，局域网需要转 base64
+                if (currentMode === 'internet') {
+                    sendViaConnection({ type: "chunk", fid, index: i, total: totalChunk, data: slice });
+                } else {
+                    // 局域网模式通过 dataChannel 发送，需将 ArrayBuffer 转为 base64
+                    const base64 = arrayBufferToBase64(slice);
+                    sendViaConnection({ type: "chunk", fid, index: i, total: totalChunk, data: base64, isBase64: true });
+                }
+
+                const percent = ((i + 1) / totalChunk * 100).toFixed(1);
+                progressBar.style.width = percent + "%";
+                progressPercent.innerText = percent + "%";
+
+                // 流控：每隔几块等一下
+                if (i % 5 === 0) await new Promise(r => setTimeout(r, 10));
+            }
+
+            addChatMsg(`文件 ${file.name} 发送完成`, true);
+            showToast(`文件 ${file.name} 发送完成`);
+            setTimeout(() => progressBox.style.display = "none", 1000);
+        }
+
+        function arrayBufferToBase64(buffer) {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            const len = bytes.byteLength;
+            for (let i = 0; i < len; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary);
+        }
+
+        // 处理局域网模式下收到的 base64 数据
+        const originalHandleReceivedData = handleReceivedData;
+        handleReceivedData = function(data) {
+            if (data.type === 'chunk' && data.isBase64) {
+                const binary = atob(data.data);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                data.data = bytes.buffer;
+            }
+            originalHandleReceivedData(data);
+        };
+
+        // ==================== 事件绑定 ====================
+        uploadBox.onclick = () => fileInput.click();
+        fileInput.onchange = e => {
+            for (let f of e.target.files) sendFile(f);
+        };
+        uploadBox.ondragover = e => {
+            e.preventDefault();
+            uploadBox.classList.add("active");
+        };
+        uploadBox.ondragleave = () => uploadBox.classList.remove("active");
+        uploadBox.ondrop = e => {
+            e.preventDefault();
+            uploadBox.classList.remove("active");
+            for (let f of e.dataTransfer.files) sendFile(f);
+        };
+
+        sendTextBtn.onclick = sendTextMsg;
+        textInput.onkeydown = e => {
+            if (e.key === 'Enter') sendTextMsg();
+        };
+
+        // ==================== 页面初始化 ====================
+        window.onload = () => {
+            const params = new URLSearchParams(location.search);
+            const mode = params.get('m');
+
+            if (mode === 'internet') {
+                switchMode('internet');
+            } else if (mode === 'lan') {
+                switchMode('lan');
+            } else if (mode === 'bluetooth') {
+                switchMode('bluetooth');
+            } else {
+                initInternetMode();
+            }
+        };
+    </script>
+    <script src="../../UI/primoUI 0.1/js/modules/nav.js"></script>
+    <script src="../../js/nav.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/cloud-sync.js"></script>
+</body>
+
+</html>

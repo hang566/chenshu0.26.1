@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>云枢|电子小票</title>
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/variables.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/base.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/layout.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/forms.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/navigation.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/display.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/feedback.css">
+    <style>
+        body { background: var(--bg); color: var(--text); }
+        .container { max-width: 1100px; margin: 0 auto; padding: 20px; margin-top: 50px; }
+        .section-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem; }
+        hr { border: none; border-top: 1px solid var(--border); margin: 0 0 20px; }
+
+        .toolbar {
+            display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+            padding: 14px; background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: 8px; box-shadow: var(--shadow); margin-bottom: 16px;
+        }
+        .toolbar .search-box { display: flex; gap: 8px; flex: 1; min-width: 220px; }
+        .toolbar .search-box input {
+            flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;
+            font-size: 0.9rem; background: var(--bg); color: var(--text);
+        }
+        .toolbar select {
+            padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;
+            font-size: 0.9rem; background: var(--bg); color: var(--text);
+        }
+        .btn {
+            padding: 8px 16px; border-radius: 6px; font-size: 0.9rem; cursor: pointer;
+            border: 1px solid var(--border); background: var(--btn-bg); color: var(--text); transition: all 0.2s;
+        }
+        .btn:hover { background: var(--main); color: #fff; border-color: var(--main); }
+        .btn-primary { background: var(--main); color: #fff; border-color: var(--main); }
+        .btn-secondary { background: var(--btn-bg); color: var(--text); }
+        .btn-secondary:hover { background: var(--btn-hover); color: var(--text); }
+
+        .order-list { display: flex; flex-direction: column; gap: 10px; }
+        .order-card {
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;
+            padding: 14px 16px; box-shadow: var(--shadow); cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+        }
+        .order-card:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--main) 40%, var(--border)); box-shadow: 0 4px 14px rgba(0,0,0,0.1); }
+        .order-card .oc-main { flex: 1; min-width: 200px; }
+        .order-card .oc-code { font-weight: 700; font-size: 1rem; margin-bottom: 2px; display: flex; align-items: center; gap: 8px; }
+        .order-card .oc-customer { font-size: 0.85rem; color: color-mix(in srgb, var(--text) 65%, transparent); }
+        .order-card .oc-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .badge {
+            font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 500;
+        }
+        .badge.pay-cash { background: color-mix(in srgb, var(--success) 18%, transparent); color: var(--success); }
+        .badge.pay-wechat { background: color-mix(in srgb, #07c160 18%, transparent); color: #07c160; }
+        .badge.pay-alipay { background: color-mix(in srgb, #1677ff 18%, transparent); color: #1677ff; }
+        .badge.pay-credit { background: color-mix(in srgb, var(--warning) 18%, transparent); color: var(--warning); }
+        .badge.pay-other { background: color-mix(in srgb, var(--text) 12%, transparent); color: var(--text); }
+        .badge.pay-member { background: color-mix(in srgb, var(--danger) 18%, transparent); color: var(--danger); }
+        .badge.src-queue { background: color-mix(in srgb, var(--main) 14%, transparent); color: var(--main); }
+        .badge.src-handheld { background: color-mix(in srgb, #8b5cf6 16%, transparent); color: #8b5cf6; }
+        .badge.src-order { background: color-mix(in srgb, var(--text) 10%, transparent); color: var(--text); }
+        .badge.status-pending { background: color-mix(in srgb, var(--warning) 18%, transparent); color: var(--warning); }
+        .badge.status-done { background: color-mix(in srgb, var(--success) 18%, transparent); color: var(--success); }
+        .badge.status-cancelled { background: color-mix(in srgb, var(--danger) 18%, transparent); color: var(--danger); }
+        .order-card .oc-amount { font-size: 1.15rem; font-weight: 700; color: var(--danger); }
+        .order-card .oc-time { font-size: 0.75rem; color: color-mix(in srgb, var(--text) 55%, transparent); margin-top: 4px; }
+
+        .empty-state { text-align: center; padding: 60px 20px; color: color-mix(in srgb, var(--text) 50%, transparent); }
+        .empty-state .icon { font-size: 2.5rem; margin-bottom: 8px; }
+
+        /* ===== 小票模态框 ===== */
+        .modal {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000;
+            align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto;
+        }
+        .modal.show { display: flex; }
+        .modal-wrap { width: 100%; max-width: 420px; }
+        .modal-actions { display: flex; gap: 8px; margin-bottom: 12px; }
+        .modal-actions .btn { flex: 1; }
+
+        /* 小票纸张样式 */
+        .receipt {
+            background: #fff; color: #111; border-radius: 6px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+            font-family: 'Courier New', 'Menlo', monospace;
+            padding: 20px 18px; position: relative;
+        }
+        .receipt::before, .receipt::after {
+            content: ''; position: absolute; left: 0; right: 0; height: 8px;
+            background: linear-gradient(45deg, transparent 33%, #fff 33%, #fff 66%, transparent 66%);
+            background-size: 16px 16px;
+        }
+        .receipt::before { top: -1px; transform: rotate(180deg); }
+        .receipt::after { bottom: -1px; }
+        .receipt .r-center { text-align: center; }
+        .receipt .r-shop { font-size: 1.15rem; font-weight: 700; margin-bottom: 2px; }
+        .receipt .r-subtitle { font-size: 0.8rem; margin-bottom: 8px; color: #555; }
+        .receipt .r-divider { border: none; border-top: 1px dashed #999; margin: 8px 0; }
+        .receipt .r-row { display: flex; justify-content: space-between; font-size: 0.82rem; margin: 3px 0; }
+        .receipt .r-row .label { color: #555; }
+        .receipt .r-row .val { font-weight: 600; }
+        .receipt .r-items { font-size: 0.8rem; }
+        .receipt .r-item { margin: 5px 0; }
+        .receipt .r-item .r-item-head { display: flex; justify-content: space-between; }
+        .receipt .r-item .r-item-name { font-weight: 600; }
+        .receipt .r-item .r-item-spec { color: #666; font-size: 0.72rem; margin-left: 6px; }
+        .receipt .r-total { font-size: 1rem; font-weight: 700; }
+        .receipt .r-footer { text-align: center; font-size: 0.78rem; color: #555; margin-top: 10px; }
+        .receipt .r-code { font-family: 'Courier New', monospace; font-size: 0.78rem; letter-spacing: 1px; text-align: center; margin-top: 6px; }
+        .receipt .r-tag {
+            display: inline-block; font-size: 0.68rem; padding: 1px 8px; border-radius: 3px;
+            border: 1px solid #999; color: #333; margin-bottom: 6px;
+        }
+        .receipt.internal { border-left: 4px solid var(--danger, #e74c3c); }
+        .receipt.external { border-left: 4px solid var(--success, #2ecc71); }
+        .receipt .r-section-title { font-size: 0.75rem; font-weight: 700; color: #333; margin: 8px 0 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        @media print {
+            body * { visibility: hidden; }
+            .receipt, .receipt * { visibility: visible; }
+            .modal { position: static; background: none; padding: 0; display: block !important; }
+            .modal-actions, .toolbar, .order-list, .section-title, hr { display: none !important; }
+            .receipt { box-shadow: none; }
+        }
+        @media (max-width: 600px) {
+            .container { padding: 12px; }
+            .toolbar { padding: 10px; }
+            .order-card { padding: 12px; }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="nav"></div>
+
+    <div class="container">
+        <h1 class="section-title">电子小票</h1>
+        <hr>
+
+        <!-- 工具栏 -->
+        <div class="toolbar">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="搜索订单号、客户..." oninput="renderList()">
+                <button class="btn btn-primary" onclick="renderList()">搜索</button>
+            </div>
+            <select id="filterPay" onchange="renderList()">
+                <option value="all">全部支付</option>
+                <option value="external">外部支付</option>
+                <option value="member">内部账户</option>
+                <option value="cash">现金</option>
+                <option value="wechat">微信</option>
+                <option value="alipay">支付宝</option>
+                <option value="credit">信用卡</option>
+                <option value="other">其他</option>
+            </select>
+            <select id="filterSrc" onchange="renderList()">
+                <option value="all">全部来源</option>
+                <option value="order">主收银台</option>
+                <option value="handheld">手机点单</option>
+                <option value="queue">排队点单</option>
+            </select>
+        </div>
+
+        <!-- 订单列表 -->
+        <div class="order-list" id="orderList"></div>
+    </div>
+
+    <!-- 小票模态框 -->
+    <div class="modal" id="receiptModal">
+        <div class="modal-wrap">
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeReceipt()">返回列表</button>
+                <button class="btn btn-primary" onclick="window.print()">打印</button>
+            </div>
+            <div id="receiptBox"></div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 存储配置（与各服务共享） ====================
+        const STORAGE_ORDERS = 'order_records';
+        const PAYMENT_TEXT = { cash: '现金', wechat: '微信', alipay: '支付宝', credit: '信用卡', member: '会员余额', other: '其他' };
+        const DINING_TEXT = { dinein: '堂食', reserve: '预定', takeout: '外卖', other: '其他' };
+        const SOURCE_TEXT = { order: '主收银台', handheld: '手机点单', queue: '排队点单' };
+        const EXTERNAL_PAY = ['cash', 'wechat', 'alipay', 'credit', 'other'];
+
+        let orders = [];
+
+        function loadOrders() {
+            orders = JSON.parse(localStorage.getItem(STORAGE_ORDERS) || '[]');
+        }
+
+        function isExternal(order) {
+            return EXTERNAL_PAY.includes(order.payment);
+        }
+
+        function formatMoney(num) { return '¥' + Number(num || 0).toFixed(2); }
+        function escapeHtml(str) {
+            return String(str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+        }
+        function pad(n) { return String(n).padStart(2, '0'); }
+        function formatTime(iso) {
+            try {
+                const d = new Date(iso);
+                return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+            } catch (e) { return iso || '-'; }
+        }
+
+        // ==================== 列表渲染 ====================
+        function renderList() {
+            const list = document.getElementById('orderList');
+            const search = document.getElementById('searchInput').value.trim().toLowerCase();
+            const fPay = document.getElementById('filterPay').value;
+            const fSrc = document.getElementById('filterSrc').value;
+
+            let filtered = orders.filter(o => {
+                if (fPay === 'external' && !isExternal(o)) return false;
+                if (fPay === 'member' && o.payment !== 'member') return false;
+                if (!['all', 'external', 'member'].includes(fPay) && o.payment !== fPay) return false;
+                if (fSrc !== 'all' && (o.source || 'order') !== fSrc) return false;
+                if (search &&
+                    !String(o.code || '').toLowerCase().includes(search) &&
+                    !String(o.customer || '').toLowerCase().includes(search) &&
+                    !(o.queueNumber || '').toLowerCase().includes(search)) return false;
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                list.innerHTML = `<div class="empty-state"><div class="icon">🧾</div><div>暂无订单小票</div>
+                    <div style="font-size:0.85rem;margin-top:6px;">下单后此处自动生成电子小票</div></div>`;
+                return;
+            }
+
+            list.innerHTML = filtered.map(o => {
+                const payBadge = `<span class="badge pay-${o.payment}">${PAYMENT_TEXT[o.payment] || o.payment}</span>`;
+                const srcBadge = `<span class="badge src-${o.source || 'order'}">${SOURCE_TEXT[o.source || 'order']}</span>`;
+                const statusBadge = o.status ? `<span class="badge status-${o.status}">${statusText(o.status)}</span>` : '';
+                const qNum = o.queueNumber ? ` · 排队 ${escapeHtml(o.queueNumber)}` : '';
+                return `
+                <div class="order-card" onclick="openReceipt('${o.id}')">
+                    <div class="oc-main">
+                        <div class="oc-code">${escapeHtml(o.code)} ${payBadge} ${srcBadge} ${statusBadge}</div>
+                        <div class="oc-customer">${escapeHtml(o.customer || '-')}${qNum}${o.table ? ' · 桌号 ' + escapeHtml(o.table) : ''}</div>
+                        <div class="oc-time">${formatTime(o.createdAt)} · ${escapeHtml(PAYMENT_TEXT[o.payment] || '')}</div>
+                    </div>
+                    <div class="oc-amount">${formatMoney(o.amount)}</div>
+                </div>`;
+            }).join('');
+        }
+
+        function statusText(s) {
+            return ({ pending: '待处理', done: '已完成', cancelled: '已取消' }[s]) || s;
+        }
+
+        // ==================== 小票渲染 ====================
+        function openReceipt(id) {
+            const order = orders.find(o => o.id === id);
+            if (!order) return;
+            const box = document.getElementById('receiptBox');
+            box.innerHTML = isExternal(order) ? renderExternal(order) : renderInternal(order);
+            document.getElementById('receiptModal').classList.add('show');
+        }
+
+        function closeReceipt() {
+            document.getElementById('receiptModal').classList.remove('show');
+        }
+
+        function itemRows(items) {
+            return items.map(i => {
+                const specs = (i.specs && i.specs.length)
+                    ? '<div class="r-item-spec">' + i.specs.map(s => escapeHtml(s.name) + ':' + escapeHtml(s.value)).join(' / ') + '</div>'
+                    : '';
+                return `
+                <div class="r-item">
+                    <div class="r-item-head">
+                        <span class="r-item-name">x${i.quantity} ${escapeHtml(i.name)}</span>
+                        <span>${formatMoney(i.price * i.quantity)}</span>
+                    </div>
+                    ${specs}
+                </div>`;
+            }).join('');
+        }
+
+        // 外部支付：客户购物凭证（简洁）
+        function renderExternal(o) {
+            const itemsHtml = itemRows(o.items);
+            const qLine = o.queueNumber ? `<div class="r-row"><span class="label">排队号</span><span class="val">${escapeHtml(o.queueNumber)}</span></div>` : '';
+            const tableLine = o.table ? `<div class="r-row"><span class="label">桌号</span><span class="val">${escapeHtml(o.table)}</span></div>` : '';
+            const remarkLine = o.remark ? `<div class="r-row"><span class="label">备注</span><span class="val">${escapeHtml(o.remark)}</span></div>` : '';
+            return `
+            <div class="receipt external" id="receiptPrint">
+                <div class="r-center">
+                    <div class="r-shop">云枢餐厅</div>
+                    <div class="r-subtitle">购物凭证（客户联）</div>
+                </div>
+                <hr class="r-divider">
+                <div class="r-row"><span class="label">订单号</span><span class="val">${escapeHtml(o.code)}</span></div>
+                <div class="r-row"><span class="label">时间</span><span class="val">${formatTime(o.createdAt)}</span></div>
+                ${qLine}
+                ${tableLine}
+                <hr class="r-divider">
+                <div class="r-items">${itemsHtml}</div>
+                <hr class="r-divider">
+                <div class="r-row r-total"><span>合计</span><span>${formatMoney(o.amount)}</span></div>
+                <div class="r-row"><span class="label">支付方式</span><span class="val">${escapeHtml(PAYMENT_TEXT[o.payment] || '')}</span></div>
+                ${remarkLine}
+                <hr class="r-divider">
+                <div class="r-footer">感谢您的惠顾，欢迎再次光临！</div>
+                <div class="r-code">*** ${escapeHtml(o.code)} ***</div>
+            </div>`;
+        }
+
+        // 内部账户：详细服务小票（含会员、费用明细、来源等）
+        function renderInternal(o) {
+            const itemsHtml = itemRows(o.items);
+            const subtotal = Number(o.subtotal || 0);
+            const serviceFee = Number(o.serviceFee || 0);
+            const packFee = Number(o.packFee || 0);
+            const deliveryFee = Number(o.deliveryFee || 0);
+
+            const memberBlock = (o.payment === 'member' || o.memberId) ? `
+                <div class="r-section-title">会员信息</div>
+                <div class="r-row"><span class="label">会员</span><span class="val">${escapeHtml(o.memberName || '-')}</span></div>
+                <div class="r-row"><span class="label">支付前余额</span><span class="val">${formatMoney(o.memberBalanceBefore)}</span></div>
+                <div class="r-row"><span class="label">支付后余额</span><span class="val">${o.memberBalanceAfter !== null && o.memberBalanceAfter !== undefined ? formatMoney(o.memberBalanceAfter) : '-'}</span></div>
+            ` : '';
+
+            const feesBlock = (serviceFee || packFee || deliveryFee) ? `
+                <div class="r-row"><span class="label">商品小计</span><span class="val">${formatMoney(subtotal)}</span></div>
+                ${serviceFee ? `<div class="r-row"><span class="label">服务费</span><span class="val">${formatMoney(serviceFee)}</span></div>` : ''}
+                ${packFee ? `<div class="r-row"><span class="label">包装费</span><span class="val">${formatMoney(packFee)}</span></div>` : ''}
+                ${deliveryFee ? `<div class="r-row"><span class="label">配送费</span><span class="val">${formatMoney(deliveryFee)}</span></div>` : ''}
+            ` : `<div class="r-row"><span class="label">商品小计</span><span class="val">${formatMoney(subtotal)}</span></div>`;
+
+            const qLine = o.queueNumber ? `<div class="r-row"><span class="label">排队号</span><span class="val">${escapeHtml(o.queueNumber)}</span></div>` : '';
+            const contactLine = o.contact ? `<div class="r-row"><span class="label">联系方式</span><span class="val">${escapeHtml(o.contact)}</span></div>` : '';
+            const remarkLine = o.remark ? `<div class="r-row"><span class="label">备注</span><span class="val">${escapeHtml(o.remark)}</span></div>` : '';
+
+            return `
+            <div class="receipt internal" id="receiptPrint">
+                <div class="r-center">
+                    <div class="r-shop">云枢餐厅</div>
+                    <div class="r-subtitle">服务小票（内部联）</div>
+                    <div class="r-tag">${escapeHtml(SOURCE_TEXT[o.source || 'order'])}</div>
+                </div>
+                <hr class="r-divider">
+                <div class="r-row"><span class="label">订单号</span><span class="val">${escapeHtml(o.code)}</span></div>
+                <div class="r-row"><span class="label">状态</span><span class="val">${escapeHtml(statusText(o.status))}</span></div>
+                <div class="r-row"><span class="label">下单时间</span><span class="val">${formatTime(o.createdAt)}</span></div>
+                <div class="r-row"><span class="label">更新时间</span><span class="val">${formatTime(o.updatedAt)}</span></div>
+                <hr class="r-divider">
+                <div class="r-section-title">客户信息</div>
+                <div class="r-row"><span class="label">客户</span><span class="val">${escapeHtml(o.customer || '-')}</span></div>
+                <div class="r-row"><span class="label">就餐方式</span><span class="val">${escapeHtml(DINING_TEXT[o.dining] || o.dining || '-')}</span></div>
+                ${o.table ? `<div class="r-row"><span class="label">桌号</span><span class="val">${escapeHtml(o.table)}</span></div>` : ''}
+                ${qLine}
+                ${contactLine}
+                ${remarkLine}
+                <hr class="r-divider">
+                <div class="r-section-title">消费明细</div>
+                <div class="r-items">${itemsHtml}</div>
+                <hr class="r-divider">
+                ${feesBlock}
+                <div class="r-row r-total"><span>应收合计</span><span>${formatMoney(o.amount)}</span></div>
+                <div class="r-row"><span class="label">支付方式</span><span class="val">${escapeHtml(PAYMENT_TEXT[o.payment] || '')}</span></div>
+                ${memberBlock}
+                <hr class="r-divider">
+                <div class="r-footer">— 内部留存 · 请妥善保管 —</div>
+                <div class="r-code">*** ${escapeHtml(o.code)} ***</div>
+            </div>`;
+        }
+
+        // 点击遮罩关闭
+        document.addEventListener('click', function (e) {
+            if (e.target.id === 'receiptModal') closeReceipt();
+        });
+
+        // ESC 关闭
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeReceipt();
+        });
+
+        // ==================== 初始化与同步 ====================
+        function renderAll() {
+            loadOrders();
+            renderList();
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            renderAll();
+            // 支持 URL 直接打开指定小票：?id=xxx
+            const params = new URLSearchParams(location.search);
+            const id = params.get('id');
+            if (id) {
+                loadOrders();
+                const o = orders.find(x => x.id === id);
+                if (o) openReceipt(id);
+            }
+        });
+
+        // 订单变化自动刷新
+        window.addEventListener('storage', function (e) {
+            if (e.key === STORAGE_ORDERS) renderAll();
+        });
+        window.addEventListener('focus', renderAll);
+    </script>
+
+    <script src="../../UI/primoUI 0.2/js/modules/theme.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/cloud-sync.js"></script>
+</body>
+
+</html>

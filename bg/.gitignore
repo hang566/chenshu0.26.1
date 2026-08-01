@@ -1,0 +1,13 @@
+# 编译产物
+yunshu-bg.exe
+yunshu-bg
+
+# 数据库文件
+data/
+
+# 依赖
+vendor/
+
+# 系统文件
+.DS_Store
+Thumbs.db

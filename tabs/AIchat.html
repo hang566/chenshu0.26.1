@@ -1,0 +1,31 @@
+<div>
+    <h1>AI对话</h1>
+    <hr>
+    <div class="settings-layout">
+        <ul class="settings-sidebar">
+            <li><button onclick="openModal('addApi')">添加api</button></li>
+        </ul>
+
+        <div class="settings-content">
+            <h1>12345678900987654321</h1>
+        </div>
+
+        <div class="modal" id="modal">
+            <div class="modal-content">
+                <h3>添加api</h3>
+                <p>请输入api地址</p>
+                <input type="text" id="apiUrl" placeholder="请输入api地址">
+                <p>请输入api密钥</p>
+                <input type="text" id="apiKey" placeholder="请输入api密钥">
+                <p>请输入api名称</p>
+                <input type="text" id="apiName" placeholder="请输入api名称">
+                <p>
+                    <input type="checkbox" id="apiDefault">
+                    <label for="apiDefault">默认api</label>
+                </p>
+                <button onclick="addApi()">添加</button>
+                <button onclick="closeModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>

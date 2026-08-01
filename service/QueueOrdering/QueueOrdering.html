@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>云枢|排队点单</title>
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/variables.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/base.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/layout.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/forms.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/navigation.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/display.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/feedback.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/tabs-browser.css">
+    <style>
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-size: 15px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .app {
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* ===== 取号欢迎屏 ===== */
+        .welcome {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 24px;
+            text-align: center;
+            background: linear-gradient(160deg, var(--main), color-mix(in srgb, var(--main) 70%, #000));
+            color: #fff;
+            min-height: 100vh;
+        }
+        .welcome .logo {
+            font-size: 3.4rem;
+            margin-bottom: 12px;
+        }
+        .welcome h1 { font-size: 1.6rem; margin: 0 0 6px; font-weight: 700; }
+        .welcome .tip { font-size: 0.85rem; opacity: 0.9; margin-bottom: 28px; }
+        .welcome-card {
+            width: 100%;
+            background: var(--card-bg);
+            color: var(--text);
+            border-radius: 16px;
+            padding: 22px 18px;
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
+        }
+        .welcome-card .form-group { margin-bottom: 14px; text-align: left; }
+        .welcome-card label { display: block; font-size: 0.82rem; color: color-mix(in srgb, var(--text) 65%, transparent); margin-bottom: 5px; }
+        .welcome-card input {
+            width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 10px;
+            font-size: 0.95rem; background: var(--bg); color: var(--text); font-family: inherit;
+        }
+        .btn-big {
+            width: 100%; padding: 14px; border: none; border-radius: 12px;
+            background: var(--success); color: #fff; font-size: 1rem; font-weight: 600;
+            cursor: pointer; transition: transform 0.15s;
+        }
+        .btn-big:active { transform: scale(0.98); }
+        .btn-big.secondary { background: var(--btn-bg); color: var(--text); border: 1px solid var(--border); margin-top: 10px; }
+        .queue-info { margin-top: 18px; font-size: 0.8rem; color: color-mix(in srgb, var(--text) 60%, transparent); }
+
+        /* ===== 排队号大卡片 ===== */
+        .number-card {
+            width: 100%;
+            background: #fff;
+            border-radius: 16px;
+            padding: 24px 18px;
+            margin: 18px 0;
+            text-align: center;
+            border: 2px dashed var(--main);
+        }
+        .number-card .label { font-size: 0.8rem; color: color-mix(in srgb, var(--text) 60%, transparent); margin-bottom: 6px; }
+        .number-card .num { font-size: 2.8rem; font-weight: 800; color: var(--main); line-height: 1.1; }
+        .number-card .ahead { margin-top: 8px; font-size: 0.85rem; color: var(--danger); font-weight: 600; }
+
+        /* ===== 顶部栏 ===== */
+        .topbar {
+            position: sticky; top: 0; z-index: 50;
+            background: var(--main); color: #fff;
+            padding: 12px 14px; display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+        .topbar .left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .topbar .qnum {
+            background: rgba(255, 255, 255, 0.22); padding: 4px 10px; border-radius: 14px;
+            font-size: 0.8rem; font-weight: 600; white-space: nowrap;
+        }
+        .topbar .title { font-size: 1rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .icon-btn {
+            background: rgba(255, 255, 255, 0.18); border: none; color: #fff;
+            width: 38px; height: 38px; border-radius: 50%; font-size: 1.1rem; cursor: pointer;
+            position: relative; flex-shrink: 0;
+        }
+        .cart-badge {
+            position: absolute; top: -4px; right: -4px; background: var(--danger); color: #fff;
+            font-size: 0.68rem; min-width: 17px; height: 17px; border-radius: 9px;
+            display: flex; align-items: center; justify-content: center; padding: 0 4px;
+        }
+
+        .search-bar { padding: 10px 12px; background: var(--card-bg); border-bottom: 1px solid var(--border); position: sticky; top: 62px; z-index: 40; }
+        .search-bar input {
+            width: 100%; padding: 9px 14px; border: 1px solid var(--border); border-radius: 20px;
+            font-size: 0.9rem; background: var(--bg); color: var(--text);
+        }
+
+        .cat-tabs { display: flex; gap: 6px; padding: 10px 12px; overflow-x: auto; background: var(--card-bg); border-bottom: 1px solid var(--border); -webkit-overflow-scrolling: touch; }
+        .cat-tabs::-webkit-scrollbar { display: none; }
+        .cat-tab { flex-shrink: 0; padding: 6px 14px; border-radius: 16px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 0.85rem; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+        .cat-tab.active { background: var(--main); color: #fff; border-color: var(--main); }
+
+        .dish-list { flex: 1; padding: 10px 12px 100px; }
+        .dish-item { display: flex; align-items: center; gap: 12px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin-bottom: 8px; box-shadow: var(--shadow); }
+        .dish-item .emoji { width: 48px; height: 48px; border-radius: 10px; background: color-mix(in srgb, var(--main) 12%, transparent); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
+        .dish-item .info { flex: 1; min-width: 0; }
+        .dish-item .name { font-weight: 600; font-size: 0.95rem; margin-bottom: 3px; display: flex; align-items: center; gap: 6px; }
+        .dish-item .desc { font-size: 0.75rem; color: color-mix(in srgb, var(--text) 55%, transparent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .dish-item .price { color: var(--danger); font-weight: 700; font-size: 0.95rem; margin-top: 4px; }
+        .spec-tag { font-size: 0.62rem; padding: 1px 6px; border-radius: 8px; background: color-mix(in srgb, var(--warning) 20%, transparent); color: var(--warning); }
+        .add-btn { width: 34px; height: 34px; border-radius: 50%; background: var(--main); color: #fff; border: none; font-size: 1.3rem; line-height: 1; cursor: pointer; flex-shrink: 0; transition: transform 0.15s; }
+        .add-btn:active { transform: scale(0.85); }
+        .empty { text-align: center; padding: 50px 20px; color: color-mix(in srgb, var(--text) 50%, transparent); }
+        .empty .icon { font-size: 2.5rem; margin-bottom: 8px; }
+
+        .cart-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: var(--card-bg); border-top: 1px solid var(--border); box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.1); display: flex; align-items: center; padding: 10px 14px; gap: 12px; z-index: 45; transition: transform 0.3s; }
+        .cart-bar.hidden { transform: translateX(-50%) translateY(120%); }
+        .cart-bar .cart-icon { width: 42px; height: 42px; border-radius: 50%; background: var(--main); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; position: relative; flex-shrink: 0; cursor: pointer; }
+        .cart-bar .cart-count-badge { position: absolute; top: -4px; right: -4px; background: var(--danger); color: #fff; font-size: 0.68rem; min-width: 17px; height: 17px; border-radius: 9px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+        .cart-bar .total-info { flex: 1; }
+        .cart-bar .total-label { font-size: 0.72rem; color: color-mix(in srgb, var(--text) 55%, transparent); }
+        .cart-bar .total-value { font-size: 1.15rem; font-weight: 700; color: var(--danger); }
+        .cart-bar .submit-btn { background: var(--success); color: #fff; border: none; padding: 11px 22px; border-radius: 22px; font-size: 0.95rem; font-weight: 600; cursor: pointer; flex-shrink: 0; }
+
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 100; align-items: flex-end; justify-content: center; }
+        .modal.show { display: flex; }
+        .modal-content { width: 100%; max-width: 480px; max-height: 88vh; background: var(--card-bg); border-radius: 16px 16px 0 0; display: flex; flex-direction: column; overflow: hidden; animation: slideUp 0.25s ease; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .modal-head { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .modal-head h3 { margin: 0; font-size: 1.05rem; }
+        .modal-close { background: none; border: none; font-size: 1.5rem; color: color-mix(in srgb, var(--text) 50%, transparent); cursor: pointer; line-height: 1; padding: 0 4px; }
+        .modal-body { padding: 14px 16px; overflow-y: auto; flex: 1; }
+        .modal-foot { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-shrink: 0; }
+
+        .cart-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+        .cart-item:last-child { border-bottom: none; }
+        .cart-item .ci-info { flex: 1; min-width: 0; }
+        .cart-item .ci-name { font-weight: 600; font-size: 0.9rem; }
+        .cart-item .ci-spec { font-size: 0.72rem; color: color-mix(in srgb, var(--text) 55%, transparent); margin-top: 2px; display: flex; flex-wrap: wrap; gap: 4px; }
+        .cart-item .ci-spec .pill { background: color-mix(in srgb, var(--main) 10%, transparent); color: var(--main); padding: 1px 7px; border-radius: 8px; }
+        .cart-item .ci-price { font-size: 0.82rem; color: var(--danger); margin-top: 3px; }
+        .qty-ctrl { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .qty-ctrl button { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); font-size: 1.1rem; line-height: 1; cursor: pointer; }
+        .qty-ctrl button:active { background: var(--btn-hover); }
+        .qty-ctrl .qty { min-width: 22px; text-align: center; font-weight: 600; }
+
+        .spec-section { margin-bottom: 16px; }
+        .spec-section .spec-title { font-weight: 600; font-size: 0.88rem; margin-bottom: 8px; }
+        .spec-options { display: flex; flex-wrap: wrap; gap: 8px; }
+        .spec-opt { padding: 7px 14px; border: 1px solid var(--border); border-radius: 18px; background: var(--bg); color: var(--text); font-size: 0.85rem; cursor: pointer; transition: all 0.15s; }
+        .spec-opt.selected { background: var(--main); color: #fff; border-color: var(--main); }
+
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 0.82rem; color: color-mix(in srgb, var(--text) 65%, transparent); margin-bottom: 5px; }
+        .form-group input, .form-group textarea { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; background: var(--bg); color: var(--text); font-family: inherit; }
+        .btn { padding: 10px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--btn-bg); color: var(--text); font-size: 0.9rem; cursor: pointer; transition: all 0.15s; }
+        .btn-primary { background: var(--main); color: #fff; border-color: var(--main); flex: 1; }
+        .btn-success { background: var(--success); color: #fff; border-color: var(--success); flex: 1; }
+        .btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+
+        .summary-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.85rem; }
+        .summary-row.total { font-size: 1.05rem; font-weight: 700; color: var(--danger); border-top: 1px dashed var(--border); margin-top: 6px; padding-top: 8px; }
+
+        /* 成功页 */
+        .success-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 24px; text-align: center; min-height: 100vh; background: var(--card-bg); }
+        .success-screen .check { font-size: 3.4rem; margin-bottom: 12px; }
+        .success-screen h2 { margin: 0 0 6px; color: var(--success); }
+        .success-screen .sub { font-size: 0.85rem; color: color-mix(in srgb, var(--text) 60%, transparent); margin-bottom: 22px; }
+
+        @media (min-width: 481px) { body { background: color-mix(in srgb, var(--text) 5%, var(--bg)); } }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <!-- ===== 取号欢迎屏 ===== -->
+        <div class="welcome" id="welcomeScreen">
+            <div class="logo">🍽️</div>
+            <h1>排队点单</h1>
+            <div class="tip">取号后即可边排队边点单，到号即出餐</div>
+            <div class="welcome-card">
+                <div class="form-group">
+                    <label>您的称呼</label>
+                    <input type="text" id="welcomeName" placeholder="如：王先生（可选）">
+                </div>
+                <div class="form-group">
+                    <label>手机号</label>
+                    <input type="tel" id="welcomePhone" placeholder="便于到号通知（可选）">
+                </div>
+                <button class="btn-big" onclick="takeNumber()">取号并开始点单</button>
+                <div class="queue-info" id="welcomeInfo">当前排队 <b id="waitingCount">0</b> 桌</div>
+            </div>
+        </div>
+
+        <!-- ===== 点单屏 ===== -->
+        <div id="orderScreen" style="display:none; flex:1; flex-direction:column;">
+            <div class="topbar">
+                <div class="left">
+                    <span class="qnum" id="topQNum">A001</span>
+                    <span class="title">排队点单</span>
+                </div>
+                <button class="icon-btn" onclick="openCart()" aria-label="购物车">🛒<span class="cart-badge" id="topCartBadge" style="display:none;">0</span></button>
+            </div>
+            <div class="search-bar"><input type="text" id="searchInput" placeholder="搜索菜品..." oninput="renderDishes()"></div>
+            <div class="cat-tabs" id="catTabs"></div>
+            <div class="dish-list" id="dishList"></div>
+            <div class="cart-bar hidden" id="cartBar">
+                <div class="cart-icon" onclick="openCart()">🛒<span class="cart-count-badge" id="cartCountBadge">0</span></div>
+                <div class="total-info">
+                    <div class="total-label">合计</div>
+                    <div class="total-value" id="cartTotal">¥0.00</div>
+                </div>
+                <button class="submit-btn" onclick="openCheckout()">去下单</button>
+            </div>
+        </div>
+
+        <!-- ===== 成功屏 ===== -->
+        <div class="success-screen" id="successScreen" style="display:none;">
+            <div class="check">✅</div>
+            <h2>下单成功</h2>
+            <div class="sub">请耐心等待叫号</div>
+            <div class="number-card" style="max-width:280px;">
+                <div class="label">您的排队号</div>
+                <div class="num" id="successNum">A001</div>
+                <div class="ahead" id="successAhead">前面还有 0 桌</div>
+            </div>
+            <button class="btn-big" style="max-width:280px; margin-top:20px;" onclick="restart()">再点一单</button>
+        </div>
+    </div>
+
+    <!-- 规格选择 -->
+    <div class="modal" id="specModal">
+        <div class="modal-content">
+            <div class="modal-head"><h3 id="specModalTitle">选择规格</h3><button class="modal-close" onclick="closeModal('specModal')">&times;</button></div>
+            <div class="modal-body" id="specModalBody"></div>
+            <div class="modal-foot"><button class="btn" onclick="closeModal('specModal')" style="flex:1;">取消</button><button class="btn btn-primary" onclick="confirmSpec()">加入购物车</button></div>
+        </div>
+    </div>
+
+    <!-- 购物车 -->
+    <div class="modal" id="cartModal">
+        <div class="modal-content">
+            <div class="modal-head"><h3>购物车</h3><button class="modal-close" onclick="closeModal('cartModal')">&times;</button></div>
+            <div class="modal-body" id="cartBody"></div>
+            <div class="modal-foot"><button class="btn btn-danger" onclick="clearCart()">清空</button><button class="btn btn-success" onclick="openCheckout()">去下单</button></div>
+        </div>
+    </div>
+
+    <!-- 下单确认 -->
+    <div class="modal" id="checkoutModal">
+        <div class="modal-content">
+            <div class="modal-head"><h3>确认下单</h3><button class="modal-close" onclick="closeModal('checkoutModal')">&times;</button></div>
+            <div class="modal-body" id="checkoutBody"></div>
+            <div class="modal-foot"><button class="btn" onclick="closeModal('checkoutModal')" style="flex:1;">取消</button><button class="btn btn-success" onclick="submitOrder()">确认下单</button></div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 存储配置（与 DishLibrary / OrderService3 共享） ====================
+        const STORAGE_PRODUCT = 'order_products';
+        const STORAGE_CATEGORY = 'order_categories';
+        const STORAGE_FLAVOR = 'flavors';
+        const STORAGE_CART = 'queue_cart';            // 排队点单独立购物车
+        const STORAGE_ORDERS = 'order_records';        // 订单记录（共享）
+        const STORAGE_QUEUE = 'queue_records';        // 排队记录
+        const STORAGE_QCOUNT = 'queue_counter';        // 排队号计数器
+        const SESSION_KEY = 'queue_session';          // 当前排队会话
+        const DEFAULT_CATEGORIES = ['热门', '饮品', '主食', '小吃', '甜点', '其他'];
+
+        let dishes = [];
+        let categories = [];
+        let flavors = [];
+        let cart = [];
+        let currentCategory = 'all';
+        let currentSession = null;   // { number, customer, contact, createdAt }
+        let pendingSpecProduct = null;
+        let pendingSpecSelection = {};
+
+        // ==================== 数据层 ====================
+        function loadDishes() {
+            dishes = JSON.parse(localStorage.getItem(STORAGE_PRODUCT) || '[]');
+            categories = JSON.parse(localStorage.getItem(STORAGE_CATEGORY) || '[]');
+            if (categories.length === 0) categories = DEFAULT_CATEGORIES.slice();
+            flavors = JSON.parse(localStorage.getItem(STORAGE_FLAVOR) || '[]');
+        }
+        function loadCart() { cart = JSON.parse(localStorage.getItem(STORAGE_CART) || '[]'); }
+        function saveCart() { localStorage.setItem(STORAGE_CART, JSON.stringify(cart)); }
+        function loadSession() {
+            try { currentSession = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null'); } catch (e) { currentSession = null; }
+        }
+        function saveSession() { sessionStorage.setItem(SESSION_KEY, JSON.stringify(currentSession)); }
+        function clearSession() { sessionStorage.removeItem(SESSION_KEY); currentSession = null; }
+
+        // 排队记录
+        function getQueueRecords() { return JSON.parse(localStorage.getItem(STORAGE_QUEUE) || '[]'); }
+        function saveQueueRecords(list) { localStorage.setItem(STORAGE_QUEUE, JSON.stringify(list)); }
+        function nextQueueNumber() {
+            const n = parseInt(localStorage.getItem(STORAGE_QCOUNT) || '0', 10) + 1;
+            localStorage.setItem(STORAGE_QCOUNT, String(n));
+            return 'A' + String(n).padStart(3, '0');
+        }
+        function waitingAhead(myCreatedAt) {
+            return getQueueRecords().filter(q => q.status === 'waiting' && q.createdAt < myCreatedAt).length;
+        }
+        function refreshWaitingCount() {
+            const count = getQueueRecords().filter(q => q.status === 'waiting').length;
+            const el = document.getElementById('waitingCount');
+            if (el) el.textContent = count;
+        }
+
+        function formatMoney(num) { return '¥' + Number(num || 0).toFixed(2); }
+        function escapeHtml(str) {
+            return String(str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+        }
+        function dishEmoji(category) {
+            const map = { '饮品': '🥤', '主食': '🍚', '小吃': '🍟', '甜点': '🍰', '热门': '🔥' };
+            return map[category] || '🍽️';
+        }
+
+        // ==================== 取号 ====================
+        function takeNumber() {
+            const customer = document.getElementById('welcomeName').value.trim();
+            const contact = document.getElementById('welcomePhone').value.trim();
+            const number = nextQueueNumber();
+            const now = new Date();
+            currentSession = { number, customer: customer || '到店客户', contact, createdAt: now.toISOString() };
+            saveSession();
+
+            const records = getQueueRecords();
+            records.push({
+                number, customer: currentSession.customer, contact,
+                status: 'waiting', createdAt: currentSession.createdAt, orderId: null
+            });
+            saveQueueRecords(records);
+
+            enterOrdering();
+            toast(`取号成功：${number}`);
+        }
+
+        function enterOrdering() {
+            document.getElementById('welcomeScreen').style.display = 'none';
+            document.getElementById('successScreen').style.display = 'none';
+            document.getElementById('orderScreen').style.display = 'flex';
+            document.getElementById('topQNum').textContent = currentSession.number;
+            renderAll();
+        }
+
+        // ==================== 渲染：分类与菜品 ====================
+        function renderCatTabs() {
+            const tabs = document.getElementById('catTabs');
+            tabs.innerHTML =
+                `<div class="cat-tab ${currentCategory === 'all' ? 'active' : ''}" onclick="setCategory('all')">全部</div>` +
+                categories.map(cat => `<div class="cat-tab ${currentCategory === cat ? 'active' : ''}" onclick="setCategory('${escapeHtml(cat)}')">${escapeHtml(cat)}</div>`).join('');
+        }
+        function setCategory(cat) { currentCategory = cat; renderCatTabs(); renderDishes(); }
+
+        function renderDishes() {
+            const list = document.getElementById('dishList');
+            const search = document.getElementById('searchInput').value.trim().toLowerCase();
+            const filtered = dishes.filter(d => {
+                if (currentCategory !== 'all' && d.category !== currentCategory) return false;
+                if (search && !String(d.name || '').toLowerCase().includes(search) && !String(d.desc || '').toLowerCase().includes(search)) return false;
+                return true;
+            });
+            if (filtered.length === 0) {
+                list.innerHTML = `<div class="empty"><div class="icon">🍽️</div><div>暂无菜品</div><div style="font-size:0.8rem;margin-top:6px;">请在菜品库中添加菜品</div></div>`;
+                return;
+            }
+            list.innerHTML = filtered.map(d => {
+                const hasSpecs = d.specs && d.specs.length > 0 && d.specs.some(s => s.options && s.options.length > 0);
+                const specTag = hasSpecs ? '<span class="spec-tag">多规格</span>' : '';
+                return `
+                <div class="dish-item">
+                    <div class="emoji">${dishEmoji(d.category)}</div>
+                    <div class="info">
+                        <div class="name">${escapeHtml(d.name || '')}${specTag}</div>
+                        <div class="desc">${escapeHtml(d.desc || '-')}</div>
+                        <div class="price">${formatMoney(d.price)}</div>
+                    </div>
+                    <button class="add-btn" onclick="addToCart('${d.id}')" aria-label="添加">+</button>
+                </div>`;
+            }).join('');
+        }
+
+        // ==================== 购物车 ====================
+        function addToCart(productId) {
+            const product = dishes.find(d => d.id === productId);
+            if (!product) return;
+            const hasSpecs = product.specs && product.specs.length > 0 && product.specs.some(s => s.options && s.options.length > 0);
+            if (hasSpecs) openSpecModal(product);
+            else {
+                pushCartItem({ productId: product.id, name: product.name, price: Number(product.price), quantity: 1, specs: [] });
+                toast(`已添加 "${product.name}"`);
+            }
+        }
+        function pushCartItem(item) {
+            const exist = cart.find(ci => ci.productId === item.productId && specsEqual(ci.specs, item.specs));
+            if (exist) exist.quantity += item.quantity; else cart.push(item);
+            saveCart(); renderCartBar();
+        }
+        function specsEqual(a, b) {
+            a = a || []; b = b || [];
+            if (a.length !== b.length) return false;
+            return a.every(s => b.some(t => t.name === s.name && t.value === s.value));
+        }
+        function changeQty(index, delta) {
+            const item = cart[index]; if (!item) return;
+            item.quantity += delta;
+            if (item.quantity <= 0) cart.splice(index, 1);
+            saveCart(); renderCartBar(); renderCartItems();
+        }
+        function clearCart() {
+            if (cart.length === 0) return;
+            if (!confirm('确定清空购物车？')) return;
+            cart = []; saveCart(); renderCartBar(); renderCartItems(); closeModal('cartModal');
+        }
+        function cartTotal() { return cart.reduce((s, i) => s + Number(i.price) * i.quantity, 0); }
+        function cartCount() { return cart.reduce((s, i) => s + i.quantity, 0); }
+
+        function renderCartBar() {
+            const bar = document.getElementById('cartBar');
+            const count = cartCount();
+            const total = cartTotal();
+            if (count === 0) {
+                bar.classList.add('hidden');
+                document.getElementById('topCartBadge').style.display = 'none';
+            } else {
+                bar.classList.remove('hidden');
+                const badge = document.getElementById('topCartBadge');
+                badge.style.display = 'flex'; badge.textContent = count;
+                document.getElementById('cartCountBadge').textContent = count;
+            }
+            document.getElementById('cartTotal').textContent = formatMoney(total);
+        }
+
+        function openCart() {
+            if (cart.length === 0) { toast('购物车是空的', 'warning'); return; }
+            renderCartItems(); openModal('cartModal');
+        }
+        function renderCartItems() {
+            const body = document.getElementById('cartBody');
+            if (cart.length === 0) { body.innerHTML = `<div style="text-align:center;padding:40px 20px;color:color-mix(in srgb, var(--text) 50%, transparent);">购物车是空的</div>`; return; }
+            body.innerHTML = cart.map((item, idx) => {
+                const specPills = (item.specs || []).map(s => `<span class="pill">${escapeHtml(s.name)}: ${escapeHtml(s.value)}${escapeHtml(s.unit || '')}</span>`).join('');
+                return `
+                <div class="cart-item">
+                    <div class="ci-info">
+                        <div class="ci-name">${escapeHtml(item.name)}</div>
+                        ${specPills ? `<div class="ci-spec">${specPills}</div>` : ''}
+                        <div class="ci-price">${formatMoney(item.price)} × ${item.quantity} = ${formatMoney(item.price * item.quantity)}</div>
+                    </div>
+                    <div class="qty-ctrl">
+                        <button onclick="changeQty(${idx}, -1)">−</button>
+                        <span class="qty">${item.quantity}</span>
+                        <button onclick="changeQty(${idx}, 1)">+</button>
+                    </div>
+                </div>`;
+            }).join('') + `<div style="margin-top:10px;text-align:right;font-weight:700;color:var(--danger);">合计 ${formatMoney(cartTotal())}</div>`;
+        }
+
+        // ==================== 规格选择 ====================
+        function openSpecModal(product) {
+            pendingSpecProduct = product; pendingSpecSelection = {};
+            document.getElementById('specModalTitle').textContent = `选择"${product.name}"规格`;
+            const body = document.getElementById('specModalBody');
+            let html = '';
+            product.specs.forEach(spec => {
+                if (spec.options && spec.options.length > 0) pendingSpecSelection[spec.name] = spec.options[0].value;
+                html += `
+                <div class="spec-section">
+                    <div class="spec-title">${escapeHtml(spec.name)}</div>
+                    <div class="spec-options">
+                        ${(spec.options || []).map(opt => `
+                            <div class="spec-opt" data-spec="${escapeHtml(spec.name)}" data-value="${escapeHtml(opt.value)}" onclick="selectSpecOption(this)">
+                                ${escapeHtml(opt.value)}${opt.unit ? '<span style="font-size:0.7em;opacity:0.7;">/' + escapeHtml(opt.unit) + '</span>' : ''}
+                            </div>`).join('')}
+                    </div>
+                </div>`;
+            });
+            if (flavors.length > 0) {
+                html += `
+                <div class="spec-section">
+                    <div class="spec-title">口味（可选）</div>
+                    <div class="spec-options">
+                        <div class="spec-opt selected" data-spec="口味" data-value="" onclick="selectSpecOption(this)">不选</div>
+                        ${flavors.map(f => `<div class="spec-opt" data-spec="口味" data-value="${escapeHtml(f)}" onclick="selectSpecOption(this)">${escapeHtml(f)}</div>`).join('')}
+                    </div>
+                </div>`;
+            }
+            body.innerHTML = html;
+            body.querySelectorAll('.spec-options').forEach(group => {
+                const first = group.querySelector('.spec-opt');
+                if (first && !group.querySelector('.spec-opt.selected')) first.classList.add('selected');
+            });
+            openModal('specModal');
+        }
+        function selectSpecOption(el) {
+            const specName = el.dataset.spec;
+            el.parentElement.querySelectorAll('.spec-opt').forEach(o => o.classList.remove('selected'));
+            el.classList.add('selected');
+            pendingSpecSelection[specName] = el.dataset.value;
+        }
+        function confirmSpec() {
+            if (!pendingSpecProduct) return;
+            const product = pendingSpecProduct;
+            const specs = [];
+            product.specs.forEach(spec => {
+                const val = pendingSpecSelection[spec.name];
+                if (val) {
+                    const opt = (spec.options || []).find(o => o.value === val);
+                    specs.push({ name: spec.name, value: val, unit: opt ? opt.unit : '' });
+                }
+            });
+            if (pendingSpecSelection['口味']) specs.push({ name: '口味', value: pendingSpecSelection['口味'], unit: '' });
+            pushCartItem({ productId: product.id, name: product.name, price: Number(product.price), quantity: 1, specs: specs });
+            closeModal('specModal');
+            toast(`已添加 "${product.name}"`);
+            pendingSpecProduct = null; pendingSpecSelection = {};
+        }
+
+        // ==================== 下单确认 ====================
+        function openCheckout() {
+            if (cart.length === 0) { toast('购物车是空的', 'warning'); return; }
+            closeModal('cartModal');
+            const total = cartTotal();
+            const body = document.getElementById('checkoutBody');
+            body.innerHTML = `
+                <div class="number-card" style="margin-top:0;">
+                    <div class="label">排队号</div>
+                    <div class="num" style="font-size:2rem;">${escapeHtml(currentSession.number)}</div>
+                </div>
+                <div class="form-group">
+                    <label>称呼</label>
+                    <input type="text" id="ckName" value="${escapeHtml(currentSession.customer)}" placeholder="您的称呼">
+                </div>
+                <div class="form-group">
+                    <label>手机号</label>
+                    <input type="tel" id="ckContact" value="${escapeHtml(currentSession.contact)}" placeholder="便于到号通知">
+                </div>
+                <div class="form-group">
+                    <label>备注</label>
+                    <textarea id="ckRemark" rows="2" placeholder="如：少辣、不要香菜"></textarea>
+                </div>
+                <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:6px;">
+                    ${cart.map(i => `
+                        <div class="summary-row">
+                            <span>${escapeHtml(i.name)}${i.specs && i.specs.length ? '(' + i.specs.map(s => escapeHtml(s.value)).join(',') + ')' : ''} ×${i.quantity}</span>
+                            <span>${formatMoney(i.price * i.quantity)}</span>
+                        </div>`).join('')}
+                    <div class="summary-row total"><span>合计</span><span>${formatMoney(total)}</span></div>
+                </div>
+                <div style="font-size:0.78rem;color:color-mix(in srgb, var(--text) 55%, transparent);margin-top:8px;">到号后请在柜台完成支付，支持现金/微信/支付宝。</div>
+            `;
+            openModal('checkoutModal');
+        }
+
+        function getRandomStr(len = 6) {
+            const pool = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            let res = '';
+            for (let i = 0; i < len; i++) res += pool[Math.floor(Math.random() * pool.length)];
+            return res;
+        }
+
+        function submitOrder() {
+            if (cart.length === 0) { toast('购物车是空的', 'warning'); return; }
+            const customer = document.getElementById('ckName').value.trim() || currentSession.customer;
+            const contact = document.getElementById('ckContact').value.trim();
+            const remark = document.getElementById('ckRemark').value.trim();
+            const subtotal = cartTotal();
+            const now = new Date();
+            const order = {
+                id: now.getTime().toString(),
+                code: 'ORD' + now.getTime() + getRandomStr(6),
+                queueNumber: currentSession.number,
+                customer: customer || '到店客户',
+                table: '',
+                items: cart.map(item => ({ productId: item.productId, name: item.name, price: item.price, quantity: item.quantity, specs: item.specs || [] })),
+                amount: subtotal,
+                subtotal: subtotal,
+                serviceFee: 0, packFee: 0, deliveryFee: 0,
+                payment: 'cash',
+                paymentText: '到柜台支付',
+                dining: 'dinein',
+                diningText: '排队点单',
+                contact: contact,
+                remark: remark,
+                status: 'pending',
+                source: 'queue',
+                createdAt: now.toISOString(),
+                updatedAt: now.toISOString(),
+                memberId: null, memberName: null, memberBalanceBefore: 0, memberBalanceAfter: null
+            };
+            const records = JSON.parse(localStorage.getItem(STORAGE_ORDERS) || '[]');
+            records.unshift(order);
+            localStorage.setItem(STORAGE_ORDERS, JSON.stringify(records));
+
+            // 关联排队记录
+            const q = getQueueRecords();
+            const qi = q.findIndex(r => r.number === currentSession.number);
+            if (qi !== -1) { q[qi].orderId = order.id; saveQueueRecords(q); }
+
+            cart = []; saveCart();
+            closeModal('checkoutModal');
+            showSuccess(order.queueNumber);
+        }
+
+        function showSuccess(number) {
+            document.getElementById('orderScreen').style.display = 'none';
+            const s = document.getElementById('successScreen');
+            s.style.display = 'flex';
+            document.getElementById('successNum').textContent = number;
+            const ahead = waitingAhead(currentSession.createdAt);
+            document.getElementById('successAhead').textContent = ahead > 0 ? `前面还有 ${ahead} 桌` : '即将到号，请准备';
+            clearSession();
+        }
+
+        function restart() {
+            document.getElementById('successScreen').style.display = 'none';
+            document.getElementById('welcomeScreen').style.display = 'flex';
+            document.getElementById('welcomeName').value = '';
+            document.getElementById('welcomePhone').value = '';
+            refreshWaitingCount();
+            renderCartBar();
+        }
+
+        // ==================== 模态框 & Toast ====================
+        function openModal(id) { document.getElementById(id).classList.add('show'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+        document.addEventListener('click', function (e) {
+            if (e.target.classList && e.target.classList.contains('modal')) e.target.classList.remove('show');
+        });
+        let toastTimer = null;
+        function toast(msg, type) {
+            type = type || 'success';
+            let el = document.getElementById('queue-toast');
+            if (!el) {
+                el = document.createElement('div'); el.id = 'queue-toast';
+                el.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:10px 18px;border-radius:24px;font-size:0.9rem;z-index:9999;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,0.2);transition:opacity 0.3s;max-width:90%;text-align:center;';
+                document.body.appendChild(el);
+            }
+            const colors = { success: 'var(--success)', warning: 'var(--warning)', danger: 'var(--danger)' };
+            el.style.background = colors[type] || colors.success;
+            el.textContent = msg; el.style.opacity = '1';
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => { el.style.opacity = '0'; }, 2000);
+        }
+
+        // ==================== 初始化与同步 ====================
+        function renderAll() {
+            loadDishes();
+            if (currentCategory !== 'all' && !categories.includes(currentCategory)) currentCategory = 'all';
+            renderCatTabs(); renderDishes(); renderCartBar();
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            loadDishes();
+            loadCart();
+            loadSession();
+            refreshWaitingCount();
+            if (currentSession) {
+                enterOrdering();
+            } else {
+                document.getElementById('welcomeScreen').style.display = 'flex';
+                renderCartBar();
+            }
+        });
+
+        // 菜品库改动自动同步
+        window.addEventListener('storage', function (e) {
+            if ([STORAGE_PRODUCT, STORAGE_CATEGORY, STORAGE_FLAVOR].includes(e.key)) renderAll();
+            if (e.key === STORAGE_QUEUE) refreshWaitingCount();
+        });
+        window.addEventListener('focus', renderAll);
+    </script>
+
+    <script src="../../UI/primoUI 0.2/js/modules/theme.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/cloud-sync.js"></script>
+</body>
+
+</html>

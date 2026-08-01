@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>云枢|任务中心</title>
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/variables.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/base.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/layout.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/forms.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/navigation.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/display.css">
+    <link rel="stylesheet" href="../../UI/primoUI 0.2/css/modules/feedback.css">
+    <style>
+        body { background: var(--bg); color: var(--text); }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; margin-top: 50px; }
+        .section-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem; }
+        hr { border: none; border-top: 1px solid var(--border); margin: 0 0 20px; }
+
+        /* 身份栏 */
+        .identity-bar { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); margin-bottom: 16px; }
+        .identity-bar .label { font-size: 0.85rem; color: color-mix(in srgb, var(--text) 65%, transparent); }
+        .identity-bar .pick { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); flex: 1; min-width: 0; }
+        .identity-bar .pick:hover { border-color: var(--main); }
+        .identity-bar .avatar { width: 30px; height: 30px; border-radius: 50%; background: color-mix(in srgb, var(--main) 16%, transparent); color: var(--main); display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+        .identity-bar .name { font-weight: 600; font-size: 0.9rem; }
+        .identity-bar .meta { font-size: 0.74rem; color: color-mix(in srgb, var(--text) 55%, transparent); }
+
+        /* 统计 */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 18px; }
+        .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.1); }
+        .stat-card .icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+        .stat-card .icon.blue { background: color-mix(in srgb, var(--main) 14%, transparent); }
+        .stat-card .icon.orange { background: color-mix(in srgb, var(--warning) 14%, transparent); }
+        .stat-card .icon.green { background: color-mix(in srgb, var(--success) 14%, transparent); }
+        .stat-card .icon.purple { background: color-mix(in srgb, #8b5cf6 14%, transparent); }
+        .stat-card .num { font-size: 1.4rem; font-weight: 700; line-height: 1.2; }
+        .stat-card .label { font-size: 0.78rem; color: color-mix(in srgb, var(--text) 60%, transparent); }
+
+        /* 工具栏 */
+        .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 14px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); margin-bottom: 16px; }
+        .toolbar .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; flex: 1; min-width: 200px; }
+        .toolbar input[type=text], .toolbar select { padding: 7px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.88rem; background: var(--bg); color: var(--text); font-family: inherit; }
+        .toolbar input[type=text] { min-width: 160px; flex: 1; }
+        .btn { padding: 7px 13px; border-radius: 6px; font-size: 0.86rem; cursor: pointer; border: 1px solid var(--border); background: var(--btn-bg); color: var(--text); transition: all 0.2s; display: inline-flex; align-items: center; gap: 5px; }
+        .btn:hover { background: var(--btn-hover); }
+        .btn-primary { background: var(--main); color: #fff; border-color: var(--main); }
+        .btn-primary:hover { background: color-mix(in srgb, var(--main) 85%, #000); }
+        .btn-success { background: var(--success); color: #fff; border-color: var(--success); }
+        .btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+        .btn-sm { padding: 4px 10px; font-size: 0.78rem; }
+
+        /* 任务卡片 */
+        .task-list { display: flex; flex-direction: column; gap: 10px; }
+        .task-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; box-shadow: var(--shadow); transition: all 0.2s; border-left: 4px solid var(--main); }
+        .task-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.1); }
+        .task-card.done { opacity: 0.65; border-left-color: var(--success); }
+        .task-card.priority-high { border-left-color: var(--danger); }
+        .task-card.priority-normal { border-left-color: var(--main); }
+        .task-card.priority-low { border-left-color: var(--border); }
+        .task-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+        .task-check { width: 20px; height: 20px; margin-top: 2px; cursor: pointer; flex-shrink: 0; }
+        .task-title { flex: 1; min-width: 0; font-weight: 600; font-size: 1rem; }
+        .task-card.done .task-title { text-decoration: line-through; }
+        .task-badges { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+        .tag { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; font-weight: 500; white-space: nowrap; }
+        .tag.scope-collective { background: color-mix(in srgb, #8b5cf6 16%, transparent); color: #8b5cf6; }
+        .tag.scope-department { background: color-mix(in srgb, var(--main) 14%, transparent); color: var(--main); }
+        .tag.scope-individual { background: color-mix(in srgb, #1677ff 14%, transparent); color: #1677ff; }
+        .tag.scope-self { background: color-mix(in srgb, var(--success) 14%, transparent); color: var(--success); }
+        .tag.prio-high { background: color-mix(in srgb, var(--danger) 16%, transparent); color: var(--danger); }
+        .tag.prio-normal { background: color-mix(in srgb, var(--warning) 16%, transparent); color: var(--warning); }
+        .tag.prio-low { background: color-mix(in srgb, var(--text) 10%, transparent); color: var(--text); }
+        .tag.status-pending { background: color-mix(in srgb, var(--warning) 16%, transparent); color: var(--warning); }
+        .tag.status-done { background: color-mix(in srgb, var(--success) 16%, transparent); color: var(--success); }
+        .tag.overdue { background: var(--danger); color: #fff; }
+        .task-content { font-size: 0.86rem; color: color-mix(in srgb, var(--text) 75%, transparent); margin: 6px 0 8px; line-height: 1.5; }
+        .task-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.76rem; color: color-mix(in srgb, var(--text) 55%, transparent); margin-bottom: 10px; }
+        .task-meta .mi { display: inline-flex; align-items: center; gap: 4px; }
+        .task-actions { display: flex; gap: 6px; flex-wrap: wrap; padding-top: 8px; border-top: 1px dashed var(--border); }
+        .task-actions .report-count { font-size: 0.78rem; color: var(--main); align-self: center; margin-left: auto; cursor: pointer; }
+        .empty-state { text-align: center; padding: 50px 20px; color: color-mix(in srgb, var(--text) 50%, transparent); }
+        .empty-state .icon { font-size: 2.5rem; margin-bottom: 8px; }
+
+        /* 模态框 */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto; }
+        .modal.show { display: flex; }
+        .modal-content { width: 100%; max-width: 540px; background: var(--card-bg); border-radius: 10px; box-shadow: 0 12px 40px rgba(0,0,0,0.25); overflow: hidden; margin: auto; }
+        .modal-head { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-head h3 { margin: 0; font-size: 1.05rem; }
+        .modal-close { background: none; border: none; font-size: 1.5rem; line-height: 1; cursor: pointer; color: color-mix(in srgb, var(--text) 50%, transparent); }
+        .modal-body { padding: 16px 18px; max-height: 68vh; overflow-y: auto; }
+        .modal-foot { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 0.82rem; color: color-mix(in srgb, var(--text) 65%, transparent); margin-bottom: 5px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; background: var(--bg); color: var(--text); font-family: inherit; }
+        .form-group textarea { resize: vertical; min-height: 70px; }
+        .form-row { display: flex; gap: 10px; }
+        .form-row .form-group { flex: 1; }
+        .scope-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .scope-opt { padding: 10px 6px; border: 1px solid var(--border); border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.15s; background: var(--bg); }
+        .scope-opt:hover { border-color: var(--main); }
+        .scope-opt.active { border-color: var(--main); background: color-mix(in srgb, var(--main) 10%, transparent); }
+        .scope-opt .s-icon { font-size: 1.3rem; }
+        .scope-opt .s-name { font-size: 0.76rem; margin-top: 2px; }
+        .hint { font-size: 0.76rem; color: color-mix(in srgb, var(--text) 55%, transparent); margin-top: 4px; }
+
+        /* 报备列表 */
+        .report-item { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; background: var(--bg); }
+        .report-item .r-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .report-item .r-who { font-weight: 600; font-size: 0.84rem; }
+        .report-item .r-time { font-size: 0.72rem; color: color-mix(in srgb, var(--text) 55%, transparent); }
+        .report-item .r-content { font-size: 0.84rem; color: color-mix(in srgb, var(--text) 80%, transparent); }
+        .report-empty { text-align: center; padding: 20px; color: color-mix(in srgb, var(--text) 50%, transparent); font-size: 0.86rem; }
+
+        /* 身份选择列表 */
+        .id-option { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; }
+        .id-option:hover, .id-option.active { background: var(--btn-hover); }
+        .id-option .avatar { width: 34px; height: 34px; border-radius: 50%; background: color-mix(in srgb, var(--main) 16%, transparent); color: var(--main); display: flex; align-items: center; justify-content: center; font-weight: 700; }
+    </style>
+</head>
+
+<body>
+    <div id="nav"></div>
+
+    <div class="container">
+        <h1 class="section-title">任务中心</h1>
+        <hr>
+
+        <!-- 身份 -->
+        <div class="identity-bar">
+            <span class="label">当前身份：</span>
+            <div class="pick" onclick="openIdentityModal()">
+                <div class="avatar" id="myAvatar">?</div>
+                <div style="flex:1;min-width:0;">
+                    <div class="name" id="myName">未选择</div>
+                    <div class="meta" id="myMeta">点击选择身份</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 统计 -->
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <!-- 工具栏 -->
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="openTaskModal()">+ 发布任务</button>
+            <div class="filters">
+                <input type="text" id="searchInput" placeholder="搜索任务标题/内容..." oninput="renderTasks()">
+                <select id="filterScope" onchange="renderTasks()">
+                    <option value="all">全部范围</option>
+                    <option value="collective">集体</option>
+                    <option value="department">部门</option>
+                    <option value="individual">个人</option>
+                    <option value="self">自己</option>
+                </select>
+                <select id="filterStatus" onchange="renderTasks()">
+                    <option value="all">全部状态</option>
+                    <option value="pending">待办</option>
+                    <option value="done">已完成</option>
+                </select>
+                <select id="filterMine" onchange="renderTasks()">
+                    <option value="all">全部任务</option>
+                    <option value="published">我发布的</option>
+                    <option value="tome">指派给我的</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 任务列表 -->
+        <div class="task-list" id="taskList"></div>
+    </div>
+
+    <!-- 发布/编辑任务模态框 -->
+    <div class="modal" id="taskModal">
+        <div class="modal-content">
+            <div class="modal-head"><h3 id="taskModalTitle">发布任务</h3><button class="modal-close" onclick="closeModal('taskModal')">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>发布范围</label>
+                    <div class="scope-grid" id="scopeGrid">
+                        <div class="scope-opt active" data-scope="self" onclick="selectScope('self')"><div class="s-icon">🙋</div><div class="s-name">自己</div></div>
+                        <div class="scope-opt" data-scope="individual" onclick="selectScope('individual')"><div class="s-icon">👤</div><div class="s-name">个人</div></div>
+                        <div class="scope-opt" data-scope="department" onclick="selectScope('department')"><div class="s-icon">🏢</div><div class="s-name">部门</div></div>
+                        <div class="scope-opt" data-scope="collective" onclick="selectScope('collective')"><div class="s-icon">👥</div><div class="s-name">集体</div></div>
+                    </div>
+                </div>
+                <div class="form-group" id="targetGroup" style="display:none;">
+                    <label id="targetLabel">指派对象</label>
+                    <select id="targetSelect"></select>
+                </div>
+                <div class="form-group">
+                    <label>任务标题 *</label>
+                    <input type="text" id="taskTitle" placeholder="请输入任务标题">
+                </div>
+                <div class="form-group">
+                    <label>任务内容</label>
+                    <textarea id="taskContent" placeholder="任务详细描述（可选）"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>截止日期</label><input type="date" id="taskDate"></div>
+                    <div class="form-group"><label>截止时间</label><input type="time" id="taskTime"></div>
+                </div>
+                <div class="form-group">
+                    <label>优先级</label>
+                    <select id="taskPriority">
+                        <option value="normal">普通</option>
+                        <option value="high">紧急</option>
+                        <option value="low">低</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button class="btn" onclick="closeModal('taskModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveTask()">发布</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 报备模态框 -->
+    <div class="modal" id="reportModal">
+        <div class="modal-content">
+            <div class="modal-head"><h3>任务报备</h3><button class="modal-close" onclick="closeModal('reportModal')">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>关联任务</label>
+                    <input type="text" id="reportTaskTitle" disabled style="opacity:0.7;">
+                </div>
+                <div class="form-group">
+                    <label>报备类型</label>
+                    <select id="reportType">
+                        <option value="progress">进度汇报</option>
+                        <option value="issue">问题反馈</option>
+                        <option value="done">完成报备</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>报备内容</label>
+                    <textarea id="reportContent" placeholder="请输入报备内容"></textarea>
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button class="btn" onclick="closeModal('reportModal')">取消</button>
+                <button class="btn btn-primary" onclick="submitReport()">提交报备</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 报备查看模态框 -->
+    <div class="modal" id="reportsModal">
+        <div class="modal-content">
+            <div class="modal-head"><h3>报备记录</h3><button class="modal-close" onclick="closeModal('reportsModal')">&times;</button></div>
+            <div class="modal-body" id="reportsBody"></div>
+        </div>
+    </div>
+
+    <!-- 身份选择模态框 -->
+    <div class="modal" id="identityModal">
+        <div class="modal-content">
+            <div class="modal-head"><h3>选择身份</h3><button class="modal-close" onclick="closeModal('identityModal')">&times;</button></div>
+            <div class="modal-body">
+                <input type="text" class="search-input" id="idSearch" placeholder="搜索姓名/工号/部门..." oninput="renderIdOptions()" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:10px;background:var(--bg);color:var(--text);">
+                <div id="idOptions"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 存储配置 ====================
+        const STORAGE_TASKS = 'yunshu_tasks';          // 发布的任务（集体/部门/个人）
+        const STORAGE_TODOS = 'yunshu_todos';            // 个人/自己任务（与首页日程共享）
+        const STORAGE_REPORTS = 'yunshu_task_reports';  // 报备记录
+        const STORAGE_IDENTITY = 'todolist_identity';
+        const ORG_EMP = 'org_employees';
+        const ORG_DEPT = 'org_departments';
+        const ATT_EMP = 'attendance_employees';
+
+        const SCOPE_TEXT = { self: '自己', individual: '个人', department: '部门', collective: '集体' };
+        const PRIORITY_TEXT = { high: '紧急', normal: '普通', low: '低' };
+        const REPORT_TEXT = { progress: '进度汇报', issue: '问题反馈', done: '完成报备' };
+
+        let employees = [];
+        let departments = [];
+        let tasks = [];          // 发布的任务
+        let selfTodos = [];      // 个人任务（与首页共享）
+        let reports = [];
+        let currentScope = 'self';
+        let editingTaskId = null;
+        let reportTaskId = null;
+        let myIdentity = null;   // {id, name, department, position}
+
+        function loadData() {
+            // 员工来源：组织管理优先，考勤员工兜底
+            employees = JSON.parse(localStorage.getItem(ORG_EMP) || '[]');
+            if (employees.length === 0) {
+                employees = JSON.parse(localStorage.getItem(ATT_EMP) || '[]').map(e => ({
+                    id: e.id, name: e.name, title: e.position || '', departmentId: '', departmentName: e.department || '',
+                    employeeNo: e.code || '', status: e.status === '离职' ? 'resigned' : 'active'
+                }));
+            } else {
+                const depts = JSON.parse(localStorage.getItem(ORG_DEPT) || '[]');
+                employees = employees.map(e => ({
+                    id: e.id, name: e.name, title: e.title || '', departmentId: e.departmentId || '',
+                    departmentName: deptNameById(e.departmentId, depts), employeeNo: e.employeeNo || '', status: e.status || 'active'
+                }));
+            }
+            departments = JSON.parse(localStorage.getItem(ORG_DEPT) || '[]');
+            tasks = JSON.parse(localStorage.getItem(STORAGE_TASKS) || '[]');
+            selfTodos = JSON.parse(localStorage.getItem(STORAGE_TODOS) || '[]');
+            reports = JSON.parse(localStorage.getItem(STORAGE_REPORTS) || '[]');
+            // 恢复身份
+            const savedId = localStorage.getItem(STORAGE_IDENTITY);
+            if (savedId) {
+                const e = employees.find(x => x.id === savedId);
+                if (e) myIdentity = e;
+            }
+        }
+        function deptNameById(id, depts) { const d = depts.find(x => x.id === id); return d ? d.name : ''; }
+        function saveTasks() { localStorage.setItem(STORAGE_TASKS, JSON.stringify(tasks)); }
+        function saveSelfTodos() { localStorage.setItem(STORAGE_TODOS, JSON.stringify(selfTodos)); }
+        function saveReports() { localStorage.setItem(STORAGE_REPORTS, JSON.stringify(reports)); }
+
+        function uid(prefix) { return (prefix || 't') + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+        function escapeHtml(str) {
+            return String(str ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+        }
+        function pad(n) { return String(n).padStart(2, '0'); }
+        function todayStr() { return new Date().toISOString().split('T')[0]; }
+        function fmtDate(d) { return d ? String(d).slice(0, 10) : ''; }
+
+        // ==================== 身份 ====================
+        function openIdentityModal() {
+            document.getElementById('idSearch').value = '';
+            renderIdOptions();
+            openModal('identityModal');
+        }
+        function renderIdOptions() {
+            const search = document.getElementById('idSearch').value.trim().toLowerCase();
+            const list = employees.filter(e =>
+                e.status !== 'resigned' &&
+                (!search ||
+                    String(e.name || '').toLowerCase().includes(search) ||
+                    String(e.employeeNo || '').toLowerCase().includes(search) ||
+                    String(e.departmentName || '').toLowerCase().includes(search)));
+            const box = document.getElementById('idOptions');
+            if (list.length === 0) { box.innerHTML = `<div style="text-align:center;padding:24px;color:color-mix(in srgb,var(--text) 50%,transparent);">暂无员工，请先在组织管理中添加</div>`; return; }
+            box.innerHTML = list.map(e => {
+                const initial = (e.name || '?').slice(-1) || '?';
+                return `
+                <div class="id-option ${myIdentity && myIdentity.id === e.id ? 'active' : ''}" onclick="selectIdentity('${e.id}')">
+                    <div class="avatar">${escapeHtml(initial)}</div>
+                    <div style="flex:1;">
+                        <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(e.name)} ${e.employeeNo ? '<span style="font-size:0.74rem;color:color-mix(in srgb,var(--text) 55%,transparent);">' + escapeHtml(e.employeeNo) + '</span>' : ''}</div>
+                        <div style="font-size:0.74rem;color:color-mix(in srgb,var(--text) 55%,transparent);">${escapeHtml(e.departmentName || '-')}${e.title ? ' · ' + escapeHtml(e.title) : ''}</div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+        function selectIdentity(id) {
+            myIdentity = employees.find(e => e.id === id) || null;
+            if (myIdentity) localStorage.setItem(STORAGE_IDENTITY, myIdentity.id);
+            closeModal('identityModal');
+            renderIdentity();
+            renderTasks();
+            renderStats();
+        }
+        function renderIdentity() {
+            const avatar = document.getElementById('myAvatar');
+            const name = document.getElementById('myName');
+            const meta = document.getElementById('myMeta');
+            if (!myIdentity) { avatar.textContent = '?'; name.textContent = '未选择'; meta.textContent = '点击选择身份'; return; }
+            avatar.textContent = (myIdentity.name || '?').slice(-1) || '?';
+            name.textContent = myIdentity.name;
+            meta.textContent = `${myIdentity.departmentName || '-'}${myIdentity.title ? ' · ' + myIdentity.title : ''}`;
+        }
+
+        // ==================== 统计 ====================
+        function renderStats() {
+            const all = getAllTasks();
+            const pending = all.filter(t => !t.completed).length;
+            const done = all.filter(t => t.completed).length;
+            const myReports = reports.length;
+            const cards = [
+                { cls: 'orange', icon: '📋', num: all.length, label: '任务总数', filter: null },
+                { cls: 'blue', icon: '⏳', num: pending, label: '待办任务', filter: 'pending' },
+                { cls: 'green', icon: '✅', num: done, label: '已完成', filter: 'done' },
+                { cls: 'purple', icon: '📝', num: myReports, label: '报备记录', filter: null }
+            ];
+            document.getElementById('statsGrid').innerHTML = cards.map(c =>
+                `<div class="stat-card" ${c.filter ? `onclick="filterBy('${c.filter}')"` : ''}>
+                    <div class="icon ${c.cls}">${c.icon}</div>
+                    <div><div class="num">${c.num}</div><div class="label">${c.label}</div></div>
+                </div>`
+            ).join('');
+        }
+        function filterBy(status) {
+            document.getElementById('filterStatus').value = status;
+            renderTasks();
+        }
+
+        // ==================== 统一任务视图 ====================
+        // 合并发布任务（yunshu_tasks）与个人任务（yunshu_todos，scope=self 视为任务）
+        function getAllTasks() {
+            const published = tasks.map(t => ({
+                _store: 'tasks', id: t.id, title: t.title, content: t.content || '',
+                scope: t.scope, targetId: t.targetId || '', targetName: t.targetName || '',
+                publisherId: t.publisherId, publisherName: t.publisherName || '',
+                priority: t.priority || 'normal', date: t.dueDate || '', time: t.dueTime || '',
+                completed: t.status === 'done', createdAt: t.createdAt, updatedAt: t.updatedAt || t.createdAt
+            }));
+            const self = selfTodos
+                .filter(t => t.scope === 'self' || !t.scope)  // 个人任务（含首页旧日程）
+                .map(t => ({
+                    _store: 'todos', id: t.id, title: t.title, content: '',
+                    scope: 'self', targetId: '', targetName: '',
+                    publisherId: '', publisherName: t.publisherName || '我',
+                    priority: 'normal', date: t.date || '', time: t.time || '',
+                    completed: !!t.completed, reminder: t.reminder, createdAt: t.createdAt, updatedAt: t.createdAt
+                }));
+            return [...published, ...self].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+        }
+
+        function isOverdue(t) {
+            if (t.completed || !t.date) return false;
+            const due = t.date + (t.time ? 'T' + t.time + ':00' : 'T23:59:59');
+            return new Date(due) < new Date();
+        }
+
+        function renderTasks() {
+            const list = getAllTasks();
+            const search = document.getElementById('searchInput').value.trim().toLowerCase();
+            const fScope = document.getElementById('filterScope').value;
+            const fStatus = document.getElementById('filterStatus').value;
+            const fMine = document.getElementById('filterMine').value;
+            const filtered = list.filter(t => {
+                if (fScope !== 'all' && t.scope !== fScope) return false;
+                if (fStatus === 'pending' && t.completed) return false;
+                if (fStatus === 'done' && !t.completed) return false;
+                if (fMine === 'published' && t.publisherId !== (myIdentity && myIdentity.id)) return false;
+                if (fMine === 'tome' && !isAssignedToMe(t)) return false;
+                if (search && !String(t.title || '').toLowerCase().includes(search) && !String(t.content || '').toLowerCase().includes(search)) return false;
+                return true;
+            });
+            const box = document.getElementById('taskList');
+            if (filtered.length === 0) {
+                box.innerHTML = `<div class="empty-state"><div class="icon">📝</div><div>暂无任务</div>
+                    <div style="font-size:0.85rem;margin-top:6px;">点击"发布任务"创建，或调整筛选条件</div></div>`;
+                return;
+            }
+            box.innerHTML = filtered.map(t => {
+                const overdue = isOverdue(t);
+                const reportCount = t._store === 'tasks' ? reports.filter(r => r.taskId === t.id).length : 0;
+                return `
+                <div class="task-card priority-${t.priority} ${t.completed ? 'done' : ''}">
+                    <div class="task-head">
+                        <input type="checkbox" class="task-check" ${t.completed ? 'checked' : ''} onchange="toggleComplete('${t._store}','${t.id}')">
+                        <div class="task-title">${escapeHtml(t.title)}</div>
+                        <div class="task-badges">
+                            <span class="tag scope-${t.scope}">${SCOPE_TEXT[t.scope]}</span>
+                            ${t.scope !== 'self' && t.targetName ? `<span class="tag scope-department">→ ${escapeHtml(t.targetName)}</span>` : ''}
+                            ${t.priority !== 'normal' ? `<span class="tag prio-${t.priority}">${PRIORITY_TEXT[t.priority]}</span>` : ''}
+                            <span class="tag status-${t.completed ? 'done' : 'pending'}">${t.completed ? '已完成' : '待办'}</span>
+                            ${overdue ? '<span class="tag overdue">已逾期</span>' : ''}
+                        </div>
+                    </div>
+                    ${t.content ? `<div class="task-content">${escapeHtml(t.content)}</div>` : ''}
+                    <div class="task-meta">
+                        <span class="mi">📌 ${escapeHtml(t.publisherName || '匿名')}</span>
+                        ${t.date ? `<span class="mi">📅 ${escapeHtml(t.date)}${t.time ? ' ' + escapeHtml(t.time) : ''}</span>` : ''}
+                        ${t.scope !== 'self' ? `<span class="mi">🎯 ${escapeHtml(SCOPE_TEXT[t.scope])}${t.targetName ? ' · ' + escapeHtml(t.targetName) : ''}</span>` : ''}
+                    </div>
+                    <div class="task-actions">
+                        ${t._store === 'tasks' ? `<button class="btn btn-sm" onclick="openReportModal('${t.id}')">📝 报备</button>` : ''}
+                        ${t._store === 'tasks' && t.publisherId === (myIdentity && myIdentity.id) ? `<button class="btn btn-sm" onclick="openTaskModal('${t.id}')">编辑</button>` : ''}
+                        <button class="btn btn-sm btn-danger" onclick="deleteTask('${t._store}','${t.id}')">删除</button>
+                        ${t._store === 'tasks' && reportCount > 0 ? `<span class="report-count" onclick="openReportsModal('${t.id}')">${reportCount} 条报备 ›</span>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function isAssignedToMe(t) {
+            if (!myIdentity) return false;
+            if (t.scope === 'self') return t.publisherId === myIdentity.id || !t.publisherId;
+            if (t.scope === 'individual') return t.targetId === myIdentity.id;
+            if (t.scope === 'department') return t.targetId === myIdentity.departmentId;
+            if (t.scope === 'collective') return true;  // 集体任务指派给所有人
+            return false;
+        }
+
+        // ==================== 完成切换 ====================
+        function toggleComplete(store, id) {
+            if (store === 'tasks') {
+                const t = tasks.find(x => x.id === id);
+                if (t) { t.status = t.status === 'done' ? 'pending' : 'done'; t.updatedAt = new Date().toISOString(); saveTasks(); }
+            } else {
+                const t = selfTodos.find(x => x.id === id);
+                if (t) { t.completed = !t.completed; saveSelfTodos(); }
+            }
+            renderTasks();
+            renderStats();
+        }
+
+        // ==================== 发布/编辑任务 ====================
+        function openTaskModal(id) {
+            if (!myIdentity) { alert('请先选择身份'); openIdentityModal(); return; }
+            editingTaskId = id || null;
+            document.getElementById('taskModalTitle').textContent = id ? '编辑任务' : '发布任务';
+            const t = id ? tasks.find(x => x.id === id) : null;
+            selectScope(t ? t.scope : 'self');
+            document.getElementById('taskTitle').value = t ? t.title : '';
+            document.getElementById('taskContent').value = t ? (t.content || '') : '';
+            document.getElementById('taskDate').value = t ? (t.dueDate || '') : '';
+            document.getElementById('taskTime').value = t ? (t.dueTime || '') : '';
+            document.getElementById('taskPriority').value = t ? (t.priority || 'normal') : 'normal';
+            if (t && t.scope !== 'self') {
+                refreshTargetOptions(t.scope, t.targetId);
+            }
+            openModal('taskModal');
+        }
+        function selectScope(scope) {
+            currentScope = scope;
+            document.querySelectorAll('.scope-opt').forEach(o => o.classList.toggle('active', o.dataset.scope === scope));
+            const grp = document.getElementById('targetGroup');
+            if (scope === 'self' || scope === 'collective') {
+                grp.style.display = 'none';
+            } else {
+                grp.style.display = 'block';
+                document.getElementById('targetLabel').textContent = scope === 'department' ? '指派部门' : '指派员工';
+                refreshTargetOptions(scope, '');
+            }
+        }
+        function refreshTargetOptions(scope, selectedId) {
+            const sel = document.getElementById('targetSelect');
+            if (scope === 'department') {
+                sel.innerHTML = departments.map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('') || `<option value="">暂无部门</option>`;
+            } else {
+                sel.innerHTML = employees.filter(e => e.status !== 'resigned').map(e =>
+                    `<option value="${e.id}">${escapeHtml(e.name)}${e.departmentName ? '（' + escapeHtml(e.departmentName) + '）' : ''}</option>`).join('') || `<option value="">暂无员工</option>`;
+            }
+            if (selectedId) sel.value = selectedId;
+        }
+
+        function saveTask() {
+            const title = document.getElementById('taskTitle').value.trim();
+            if (!title) { alert('请输入任务标题'); return; }
+            if (!myIdentity) { alert('请先选择身份'); return; }
+            const content = document.getElementById('taskContent').value.trim();
+            const dueDate = document.getElementById('taskDate').value;
+            const dueTime = document.getElementById('taskTime').value;
+            const priority = document.getElementById('taskPriority').value;
+            const scope = currentScope;
+
+            // 自己的任务 → 写入首页共享的 yunshu_todos
+            if (scope === 'self') {
+                if (editingTaskId) {
+                    const t = selfTodos.find(x => x.id === editingTaskId);
+                    if (t) { t.title = title; t.date = dueDate; t.time = dueTime; t.scope = 'self'; t.publisherName = myIdentity.name; }
+                } else {
+                    selfTodos.unshift({
+                        id: 'todo_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+                        title, date: dueDate, time: dueTime, reminder: false,
+                        scope: 'self', publisherName: myIdentity.name,
+                        completed: false, createdAt: new Date().toISOString()
+                    });
+                }
+                saveSelfTodos();
+            } else {
+                // 集体/部门/个人 → yunshu_tasks
+                const targetId = (scope === 'collective') ? '' : document.getElementById('targetSelect').value;
+                if (scope !== 'collective' && !targetId) { alert('请选择指派对象'); return; }
+                const targetName = scope === 'collective' ? '全体' :
+                    (scope === 'department' ? (departments.find(d => d.id === targetId) || {}).name : (employees.find(e => e.id === targetId) || {}).name);
+                if (editingTaskId) {
+                    const t = tasks.find(x => x.id === editingTaskId);
+                    if (t) {
+                        Object.assign(t, { title, content, scope, targetId, targetName, priority, dueDate, dueTime, updatedAt: new Date().toISOString() });
+                    }
+                } else {
+                    tasks.unshift({
+                        id: uid('task'), title, content, scope, targetId, targetName,
+                        publisherId: myIdentity.id, publisherName: myIdentity.name,
+                        priority, dueDate, dueTime, status: 'pending',
+                        createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+                    });
+                }
+                saveTasks();
+            }
+            closeModal('taskModal');
+            renderTasks();
+            renderStats();
+            toast(editingTaskId ? '任务已更新' : '任务已发布');
+            editingTaskId = null;
+        }
+
+        function deleteTask(store, id) {
+            if (!confirm('确定删除该任务？')) return;
+            if (store === 'tasks') {
+                tasks = tasks.filter(t => t.id !== id);
+                reports = reports.filter(r => r.taskId !== id);
+                saveTasks(); saveReports();
+            } else {
+                selfTodos = selfTodos.filter(t => t.id !== id);
+                saveSelfTodos();
+            }
+            renderTasks();
+            renderStats();
+            toast('已删除');
+        }
+
+        // ==================== 报备 ====================
+        function openReportModal(taskId) {
+            if (!myIdentity) { alert('请先选择身份'); openIdentityModal(); return; }
+            reportTaskId = taskId;
+            const t = tasks.find(x => x.id === taskId);
+            if (!t) return;
+            document.getElementById('reportTaskTitle').value = t.title;
+            document.getElementById('reportType').value = 'progress';
+            document.getElementById('reportContent').value = '';
+            openModal('reportModal');
+        }
+        function submitReport() {
+            const content = document.getElementById('reportContent').value.trim();
+            if (!content) { alert('请输入报备内容'); return; }
+            const type = document.getElementById('reportType').value;
+            const t = tasks.find(x => x.id === reportTaskId);
+            reports.unshift({
+                id: uid('r'), taskId: reportTaskId, taskTitle: t ? t.title : '',
+                reporterId: myIdentity.id, reporterName: myIdentity.name,
+                content, reportType: type, createdAt: new Date().toISOString()
+            });
+            saveReports();
+            // 完成报备自动标记任务完成
+            if (type === 'done' && t) { t.status = 'done'; t.updatedAt = new Date().toISOString(); saveTasks(); }
+            closeModal('reportModal');
+            renderTasks();
+            renderStats();
+            toast('报备已提交');
+        }
+        function openReportsModal(taskId) {
+            const list = reports.filter(r => r.taskId === taskId).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+            const t = tasks.find(x => x.id === taskId);
+            const body = document.getElementById('reportsBody');
+            if (list.length === 0) { body.innerHTML = `<div class="report-empty">暂无报备记录</div>`; }
+            else {
+                body.innerHTML = `<div style="font-weight:600;margin-bottom:10px;">${escapeHtml(t ? t.title : '')}</div>` +
+                    list.map(r => {
+                        const d = new Date(r.createdAt);
+                        return `
+                        <div class="report-item">
+                            <div class="r-head">
+                                <span class="r-who">${escapeHtml(r.reporterName)} <span class="tag scope-department">${REPORT_TEXT[r.reportType]}</span></span>
+                                <span class="r-time">${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}</span>
+                            </div>
+                            <div class="r-content">${escapeHtml(r.content)}</div>
+                        </div>`;
+                    }).join('');
+            }
+            openModal('reportsModal');
+        }
+
+        // ==================== Toast & 模态框 ====================
+        let toastTimer = null;
+        function toast(msg) {
+            let el = document.getElementById('tdl-toast');
+            if (!el) {
+                el = document.createElement('div'); el.id = 'tdl-toast';
+                el.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:10px 18px;border-radius:24px;font-size:0.9rem;z-index:9999;color:#fff;background:var(--success);box-shadow:0 4px 16px rgba(0,0,0,0.2);transition:opacity 0.3s;';
+                document.body.appendChild(el);
+            }
+            el.textContent = msg; el.style.opacity = '1';
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => { el.style.opacity = '0'; }, 1800);
+        }
+        function openModal(id) { document.getElementById(id).classList.add('show'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+        document.addEventListener('click', function (e) {
+            if (e.target.classList && e.target.classList.contains('modal')) e.target.classList.remove('show');
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') ['taskModal', 'reportModal', 'reportsModal', 'identityModal'].forEach(closeModal);
+        });
+
+        // ==================== 统一渲染 ====================
+        function renderAll() {
+            renderIdentity();
+            renderStats();
+            renderTasks();
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            loadData();
+            renderAll();
+        });
+        // 跨标签同步：首页日程/组织管理改动时刷新
+        window.addEventListener('storage', function (e) {
+            if ([STORAGE_TASKS, STORAGE_TODOS, STORAGE_REPORTS, ORG_EMP, ORG_DEPT, ATT_EMP].includes(e.key)) {
+                loadData();
+                renderAll();
+            }
+        });
+    </script>
+
+    <script src="../../UI/primoUI 0.2/js/modules/theme.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/cloud-sync.js"></script>
+</body>
+
+</html>
